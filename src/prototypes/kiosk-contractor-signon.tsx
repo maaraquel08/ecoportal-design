@@ -48,7 +48,7 @@ import {
   type Company,
 } from "@/prototypes/contractor-firms";
 import { HOSTS } from "@/prototypes/hosts";
-import { StepHeader, Stepper } from "@/prototypes/kiosk-chrome";
+import { StepHeader, StepRail, Stepper } from "@/prototypes/kiosk-chrome";
 import { Card, Tile } from "@/prototypes/kiosk-landing";
 import { PersonIcon, QrIcon, ToolboxIcon } from "@/prototypes/kiosk-icons";
 import { useShakeInvalid } from "@/prototypes/use-shake-invalid";
@@ -646,6 +646,7 @@ type Where = "choose" | "phone" | "reading" | "asking" | "result";
 /** Roughly how long the phone takes to report each answer back. */
 const PHONE_TICK_MS = 900;
 
+/** One rail at the bottom: the rule on the left, the way on. */
 function BriefingFooter({
   hint,
   children,
@@ -654,13 +655,10 @@ function BriefingFooter({
   children: React.ReactNode;
 }) {
   return (
-    <>
-      <Separator className="mt-4" />
-      <div className="mt-4 flex flex-none items-center justify-between gap-6">
-        <span className="font-mono text-[13px] text-fg-subtle">{hint}</span>
-        <div className="flex flex-none items-center gap-3">{children}</div>
-      </div>
-    </>
+    <div className="mt-4 flex flex-none items-center justify-between gap-6 border-t border-line pt-4.5">
+      <span className="font-mono text-[14px] text-fg-subtle">{hint}</span>
+      <div className="flex flex-none items-center gap-3">{children}</div>
+    </div>
   );
 }
 
@@ -703,8 +701,11 @@ export function BriefingScreen({
     setWhere("reading");
   };
 
+  /* One header rail for the whole step, so the question screen keeps
+   * its vertical room and the other phases still read as the same
+   * step. */
   const header = (
-    <StepHeader
+    <StepRail
       label="The briefing"
       active={3}
       total={SIGN_ON_TOTAL}
@@ -958,47 +959,113 @@ export function BriefingScreen({
   }
 
   /* -- one question at a time -- */
+
+  /* Two columns centred against each other on a 44 / 56 split: the
+   * length of the question no longer decides where the options sit,
+   * which is what the top-aligned version got wrong. */
+  const left = deck.length - index - 1;
+  const wrongSoFar = index + (picked ? 1 : 0) - score;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col px-10 pt-4 pb-6">
       {header}
 
-      <div className="mt-4 flex min-h-0 flex-1 gap-12">
-        <div className="flex w-104 flex-none flex-col">
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,44fr)_minmax(0,56fr)] items-center gap-14">
+        <div className="flex flex-col gap-3.5">
           <span className="font-mono text-[13px] tracking-[0.14em] text-lane-fill uppercase">
             Question {index + 1} of {deck.length}
           </span>
-          <h2 className="mt-2.5 text-[30px] leading-[1.14] font-bold tracking-[-0.03em]">
+          <h2 className="text-[38px] leading-[1.1] font-bold tracking-[-0.032em] text-pretty">
             {question.situation}
           </h2>
-          <p className="mt-2.5 text-[17px] leading-normal text-fg-subtle">
-            {question.ask}
+          <p className="text-[20px] leading-[1.45] text-fg-subtle">
+            {picked
+              ? `${
+                  left === 0
+                    ? "That was the last one."
+                    : left === 1
+                      ? "One to go after this."
+                      : `${left} to go after this.`
+                } Nothing here is recorded against you personally.`
+              : question.ask}
           </p>
-
-          {picked ? (
-            <Banner
-              tone={picked.correct ? "success" : "danger"}
-              className="mt-auto"
-            >
-              {question.rule}
-            </Banner>
-          ) : null}
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col justify-center gap-3.5">
+        <div className={`flex flex-col ${picked ? "gap-3" : "gap-3.5"}`}>
           {question.options.map((option) => {
             const chosen = picked === option;
+
+            /* Answered: the correction is attached to the option that
+             * was tapped rather than sitting in a panel across the
+             * screen, and the right answer is named out loud instead
+             * of being tinted and left to be inferred. */
+            if (picked && chosen) {
+              return (
+                <div
+                  key={option.text}
+                  className={`flex flex-col gap-3 rounded-[18px] border-[1.5px] px-6 py-5.5 ${
+                    option.correct
+                      ? "border-success-line bg-success-tint"
+                      : "border-danger-line bg-danger-tint"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4.5">
+                    <span className="text-[21px] leading-[1.3] font-semibold">
+                      {option.text}
+                    </span>
+                    <span
+                      className={`flex-none pt-1.25 font-mono text-xs tracking-[0.12em] whitespace-nowrap uppercase ${
+                        option.correct ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      {option.correct ? "Correct" : "You picked"}
+                    </span>
+                  </div>
+                  <span
+                    className={`text-[17px] leading-[1.55] ${
+                      option.correct ? "text-success" : "text-danger"
+                    }`}
+                  >
+                    {question.rule}
+                  </span>
+                </div>
+              );
+            }
+
+            /* The right answer, when she did not pick it. */
+            if (picked && option.correct) {
+              return (
+                <div
+                  key={option.text}
+                  className="flex items-start justify-between gap-4.5 rounded-[18px] border-[1.5px] border-success-line bg-success-tint px-6 py-5.5"
+                >
+                  <span className="text-[21px] leading-[1.3] font-semibold">
+                    {option.text}
+                  </span>
+                  <span className="flex-none pt-1.25 font-mono text-xs tracking-[0.12em] whitespace-nowrap text-success uppercase">
+                    Correct
+                  </span>
+                </div>
+              );
+            }
+
+            /* Neither picked nor right: still legible, plainly out. */
+            if (picked) {
+              return (
+                <div
+                  key={option.text}
+                  className="rounded-[18px] border border-line px-6 py-5 text-[20px] leading-[1.35] font-medium text-fg-subtle"
+                >
+                  {option.text}
+                </div>
+              );
+            }
+
             return (
               <button
                 key={option.text}
                 onClick={() => answer(option)}
-                disabled={picked !== null}
-                className={`rounded-[16px] border px-5 py-4.5 text-left text-[19px] leading-snug font-medium transition-colors duration-fast ease-out-quad focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring enabled:hover:bg-surface ${
-                  picked && option.correct
-                    ? "border-[1.5px] border-success-line bg-success-tint"
-                    : chosen
-                      ? "border-[1.5px] border-danger-line bg-danger-tint"
-                      : "border-line-strong disabled:opacity-50"
-                }`}
+                className="rounded-[18px] border border-line px-6.5 py-6 text-left text-[21px] leading-[1.35] font-medium transition-colors duration-fast ease-out-quad hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
                 {option.text}
               </button>
@@ -1008,9 +1075,16 @@ export function BriefingScreen({
       </div>
 
       <BriefingFooter
-        hint={`No time limit · ${PASS_MARK} of ${QUESTIONS.length} to pass`}
+        hint={`No time limit · ${PASS_MARK} of ${QUESTIONS.length} to pass${
+          wrongSoFar > 0 ? ` · ${wrongSoFar} wrong so far` : ""
+        }`}
       >
-        <Button size="cta" disabled={picked === null} onClick={next}>
+        <Button
+          size="cta"
+          className="h-14 rounded-full px-8 text-[19px]"
+          disabled={picked === null}
+          onClick={next}
+        >
           {atLast ? "See how you did" : "Next question"}
         </Button>
       </BriefingFooter>
