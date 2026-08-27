@@ -50,7 +50,7 @@ import {
   REGISTERED,
   type Company,
 } from "@/prototypes/contractor-firms";
-import { StepHeader, StepRail, Stepper } from "@/prototypes/kiosk-chrome";
+import { StepHeader, StepRail } from "@/prototypes/kiosk-chrome";
 import { Card, Tile } from "@/prototypes/kiosk-landing";
 import { PersonIcon, QrIcon, ToolboxIcon } from "@/prototypes/kiosk-icons";
 import {
@@ -591,14 +591,39 @@ function GroupLabel({
  *
  * Five paragraphs and five questions is a long time to stand in a
  * lobby holding a tool bag, and she has a screen in her pocket that is
- * better for reading. So the kiosk offers the choice and then waits —
- * it is the same briefing either way, and the record is the same
- * record.
+ * better for reading. So the kiosk offers the choice — and if she
+ * takes the code, the tablet is finished with her.
+ *
+ * It does not wait. A person who scans a code walks away from the
+ * glass: she sits down, reads, answers, and by then the tablet has
+ * long since gone back to the landing for the next person. A screen
+ * that stood there filling in a progress bar would be describing a
+ * session nobody is in.
+ *
+ * So the hand-off is a dead end, and the way back in is the one the
+ * lobby already has: her clearance code, held to the reader. That is
+ * the same door a trade who cleared herself the night before comes
+ * through, which is the point — after the briefing she *is* that
+ * trade.
  */
 type Where = "choose" | "phone" | "reading" | "asking" | "result";
 
-/** Roughly how long the phone takes to report each answer back. */
-const PHONE_TICK_MS = 900;
+/** What she does once the code is on her phone, and how she gets back
+ *  in. Said on the glass, because this is the last thing it tells her. */
+const AFTER_THE_SCAN = [
+  {
+    title: "Read it there",
+    body: "The five points and the questions, sitting down, in your own time.",
+  },
+  {
+    title: "Your code arrives",
+    body: "Pass and the clearance lands on your phone — same record either way.",
+  },
+  {
+    title: "Hold it to the reader",
+    body: "Back at any kiosk here. It takes you straight to your photo.",
+  },
+];
 
 /** One rail at the bottom: the rule on the left, the way on. */
 function BriefingFooter({
@@ -617,34 +642,20 @@ function BriefingFooter({
 }
 
 export function BriefingScreen({
-  active,
   onContinue,
+  onHandedOff,
   onBack,
 }: {
-  active: boolean;
+  /** The way on, for the briefing done here on the glass. */
   onContinue: () => void;
+  /** She has the code and is going to her phone, so the glass lets
+   *  her go — there is nothing left for this tablet to do. */
+  onHandedOff: () => void;
   onBack: () => void;
 }) {
   const [where, setWhere] = React.useState<Where>("choose");
   const quiz = useBriefing();
   const { deck, index, question, picked, score, atLast, answer } = quiz;
-
-  /* The phone reports back as she answers. Nothing here is faked that
-   * the tablet would not genuinely know: it is told how many of the
-   * five have come in, and nothing about which. */
-  const [reported, setReported] = React.useState(0);
-  React.useEffect(() => {
-    if (!active || where !== "phone" || reported === QUESTIONS.length) return;
-    const timer = window.setTimeout(
-      () => setReported((n) => n + 1),
-      PHONE_TICK_MS,
-    );
-    return () => window.clearTimeout(timer);
-  }, [active, where, reported]);
-
-  const onPhone = reported === QUESTIONS.length;
-  /* Duplicated into data-text for the shimmer's ::before layer. */
-  const waiting = `Waiting on your phone · ${reported} of ${QUESTIONS.length} answered`;
 
   const next = () => {
     if (quiz.next()) setWhere("result");
@@ -691,8 +702,9 @@ export function BriefingScreen({
               On your own phone
             </div>
             <p className="mt-2.5 text-base leading-normal text-fg-subtle">
-              Scan the code and read it sitting down, in your own time. The
-              tablet waits here and picks up when you are done.
+              Scan the code and read it sitting down, in your own time. You
+              finish on your phone and come back to the reader — the tablet is
+              free for the next person.
             </p>
             <Button
               size="cta"
@@ -728,7 +740,7 @@ export function BriefingScreen({
     );
   }
 
-  /* -- handed to her phone -- */
+  /* -- handed to her phone · the end of the tablet's part -- */
   if (where === "phone") {
     return (
       <div className="flex min-h-0 flex-1 flex-col px-10 pt-4 pb-6">
@@ -743,73 +755,53 @@ export function BriefingScreen({
 
           <div className="flex min-w-0 flex-1 flex-col">
             <h2 className="text-[34px] leading-[1.08] font-bold tracking-[-0.03em]">
-              {onPhone
-                ? "That's the briefing done"
-                : "Scan this and carry on there"}
+              Scan this and carry on there
             </h2>
-            <p className="mt-2.5 max-w-[40ch] text-[17px] leading-normal text-fg-muted">
-              {onPhone
-                ? "Recorded against your name and today's version of the content. One photo to go."
-                : "Point your camera at the code. The five points and the questions open on your phone — this screen keeps your place."}
+            <p className="mt-2.5 max-w-[44ch] text-[17px] leading-normal text-fg-muted">
+              Point your camera at the code. The five points and the{" "}
+              {QUESTIONS.length} questions open on your phone, and this tablet
+              is done with you — you will not need it again today.
             </p>
 
-            {/* transitions.dev · 15 · Shimmer text. The status is
-              * genuinely in progress, so it should not sit there
-              * looking like a finished sentence. */}
+            {/* The tablet is not watching her phone, so it does not
+              * claim to be. It says what it knows: it handed over. */}
             <div className="mt-5 flex items-center gap-2.5">
-              <span
-                className={`size-2.5 flex-none rounded-full ${
-                  onPhone ? "bg-success" : "bg-lane-base"
-                }`}
-              />
-              {onPhone ? (
-                <span className="font-mono text-[13px] tracking-[0.14em] text-success uppercase">
-                  Passed · {QUESTIONS.length} of {QUESTIONS.length} answered
-                </span>
-              ) : (
-                <span
-                  className="t-shimmer font-mono text-[13px] tracking-[0.14em] uppercase"
-                  data-text={waiting}
-                >
-                  {waiting}
-                </span>
-              )}
+              <span className="size-2.5 flex-none rounded-full bg-lane-base" />
+              <span className="font-mono text-[13px] tracking-[0.14em] text-lane-fill uppercase">
+                Handed to your phone · nothing left here
+              </span>
             </div>
 
-            {/* One bar per question, filling as her phone reports in. */}
-            <Stepper
-              active={reported}
-              total={QUESTIONS.length}
-              className="mt-4 max-w-[40ch]"
-            />
+            <div className="mt-4.5 flex flex-col gap-2.5">
+              {AFTER_THE_SCAN.map((item) => (
+                <div key={item.title} className="flex items-baseline gap-3.5">
+                  <span className="w-44 flex-none text-[15px] font-semibold">
+                    {item.title}
+                  </span>
+                  <span className="min-w-0 flex-1 text-[15px] leading-normal text-fg-subtle">
+                    {item.body}
+                  </span>
+                </div>
+              ))}
+            </div>
 
-            <Banner tone={onPhone ? "success" : "neutral"} className="mt-5">
-              {onPhone
-                ? "Nothing else to read here. The record is the same record."
-                : "Changed your mind? You can do it on the glass instead — nothing is lost."}
+            <Banner tone="neutral" className="mt-5">
+              Changed your mind? You can do it on the glass instead — nothing
+              is lost.
             </Banner>
           </div>
         </div>
 
-        <BriefingFooter
-          hint={
-            onPhone
-              ? "Reported by your phone"
-              : "The tablet is not counting down · take your time"
-          }
-        >
+        <BriefingFooter hint="No need to stand here · the reader is how you come back">
           <Button
             variant="outline"
             size="cta"
-            onClick={() => {
-              setReported(0);
-              setWhere("reading");
-            }}
+            onClick={() => setWhere("reading")}
           >
             Do it here instead
           </Button>
-          <Button size="cta" disabled={!onPhone} onClick={onContinue}>
-            Continue
+          <Button size="cta" onClick={onHandedOff}>
+            Got the code · I'm done here
           </Button>
         </BriefingFooter>
       </div>
