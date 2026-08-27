@@ -6,6 +6,8 @@ import { ContractorPrearrival } from "@/prototypes/contractor-prearrival";
 import { REGISTERED } from "@/prototypes/contractor-firms";
 import { KioskContractor } from "@/prototypes/kiosk-contractor";
 import { KioskPhone } from "@/prototypes/kiosk-phone";
+import { contractorDuring, VisitDuring } from "@/prototypes/visit-during";
+import { contractorLeaving, VisitLeaving } from "@/prototypes/visit-leaving";
 import {
   CONTRACTOR_PASS_CAPTION,
   contractorPassRows,
@@ -47,8 +49,8 @@ const TABS: { id: Scenario; label: string; ready: boolean }[] = [
   { id: "known", label: "Pre-arrival · known trade", ready: true },
   { id: "kiosk", label: "At kiosk", ready: true },
   { id: "kiosk-phone", label: "At kiosk · her phone", ready: true },
-  { id: "on-site", label: "On site", ready: false },
-  { id: "leaving", label: "Leaving", ready: false },
+  { id: "on-site", label: "On site", ready: true },
+  { id: "leaving", label: "Leaving", ready: true },
 ];
 
 function ScenarioTabs({
@@ -106,6 +108,32 @@ export function ContractorPage() {
           key={scenario}
           tabs={tabs}
           known={scenario === "known"}
+        />
+      </div>
+    );
+  }
+
+  if (scenario === "on-site") {
+    /* Her phone while she works: where she stands, and the one thing
+     * that moved while she was in the riser. */
+    return (
+      <div className="flex flex-col items-center px-8 pt-12 pb-44">
+        <VisitDuring
+          tabs={tabs}
+          content={contractorDuring({ company: REGISTERED[0].name })}
+        />
+      </div>
+    );
+  }
+
+  if (scenario === "leaving") {
+    /* The reader again, the same one that let her in. */
+    return (
+      <div className="w-full pt-12 pb-44">
+        <VisitLeaving
+          tabs={tabs}
+          content={contractorLeaving()}
+          onExit={() => setScenario("kiosk")}
         />
       </div>
     );
