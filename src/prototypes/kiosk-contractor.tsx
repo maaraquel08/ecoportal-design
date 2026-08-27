@@ -229,12 +229,20 @@ export function KioskContractor({
   /** The firm she picks, or types. Empty until the company step. */
   const [company, setCompany] = React.useState<Company>(BLANK);
   /**
-   * The reader has two doors: the question, and the landing's pass
-   * shortcut that skips it. Back has to return through the one she
-   * actually came through — the screen before it on the tape is not
-   * the screen she was looking at.
+   * Which door off the landing she came through, which settles two
+   * things.
+   *
+   * Back: the reader can be reached by the question or by the pass
+   * shortcut that skips it, and Back has to return through the one she
+   * used — the screen before it on the tape is not the screen she was
+   * looking at.
+   *
+   * Lane: "Here to work" is her choosing the contractor lane, so
+   * everything behind it is orange. Holding up a pass she already has
+   * is the platform doing its job for anyone — same as the visitor
+   * kiosk's own scan path — so that way through stays green.
    */
-  const [readerDoor, setReaderDoor] = React.useState<"landing" | "who">("who");
+  const [door, setDoor] = React.useState<"work" | "pass">("work");
   /** Which expected job the find-by-name path is verifying. */
   const [booking, setBooking] = React.useState<Booking>(BOOKINGS[0]);
   /** Her own fields, in the shape the phone's sign-up uses too, so
@@ -257,10 +265,10 @@ export function KioskContractor({
    * lane, so it belongs to the house; behind the work door she has
    * already chosen, and the screens are hers. */
   const { setLane } = useLane();
-  const onLanding = tape[step].id === "landing";
+  const platform = tape[step].id === "landing" || door === "pass";
   React.useEffect(
-    () => setLane(onLanding ? "house" : "contractor"),
-    [onLanding, setLane],
+    () => setLane(platform ? "house" : "contractor"),
+    [platform, setLane],
   );
 
   /* transitions.dev · 08 · Page side-by-side. A slot holds the screen
@@ -314,7 +322,7 @@ export function KioskContractor({
   /** The kiosk resets to whatever it was showing before this trade,
    *  forgetting which door she came through. */
   const reset = () => {
-    setReaderDoor("who");
+    setDoor("work");
     setCompany(BLANK);
     setPerson(BLANK_PERSON);
     if (onExit) {
@@ -346,9 +354,12 @@ export function KioskContractor({
       case "landing":
         return (
           <KioskLanding
-            onWork={() => goTo(index + 1)}
+            onWork={() => {
+              setDoor("work");
+              goTo(index + 1);
+            }}
             onScan={() => {
-              setReaderDoor("landing");
+              setDoor("pass");
               goTo(index + 2, "returning");
             }}
           />
@@ -358,10 +369,7 @@ export function KioskContractor({
         return (
           <WhoScreen
             onFirstTime={() => goTo(index + 1, "first-time")}
-            onReturning={() => {
-              setReaderDoor("who");
-              goTo(index + 1, "returning");
-            }}
+            onReturning={() => goTo(index + 1, "returning")}
             onBack={backFrom(index, "unchosen")}
           />
         );
@@ -399,7 +407,7 @@ export function KioskContractor({
             /* Straight in off the landing means straight back out to
              * it, with the doors open again. */
             onBack={
-              readerDoor === "landing" && !onExit
+              door === "pass" && !onExit
                 ? () => goTo(indexOf("landing"), "unchosen")
                 : backFrom(index)
             }
