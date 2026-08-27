@@ -1,7 +1,7 @@
 import * as React from "react";
 import { ControlDeck } from "@/components/control-deck";
 import { useLane, type Lane } from "@/hooks/use-lane";
-import { WORK_NOTICES } from "@/components/notice";
+import { MY_NOTICES } from "@/components/notice";
 import { ContractorPrearrival } from "@/prototypes/contractor-prearrival";
 import { REGISTERED } from "@/prototypes/contractor-firms";
 import { KioskContractor } from "@/prototypes/kiosk-contractor";
@@ -126,7 +126,7 @@ export function ContractorPage() {
             target: "Service lift → L4",
             caption: "Past the café, then the service corridor",
           }}
-          notices={WORK_NOTICES}
+          notices={MY_NOTICES}
           passCaption={CONTRACTOR_PASS_CAPTION}
           passRows={contractorPassRows(REGISTERED[0].name)}
           signOut="Hold this pass to the reader on your way out. For security a visit cannot be ended from a phone."

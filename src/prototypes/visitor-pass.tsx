@@ -56,6 +56,16 @@ export const contractorPassRows = (company: string): PassRow[] => [
   { label: "Valid", value: "Tue · 7:00am to 6:00pm", mono: true },
 ];
 
+/**
+ * The permit only exists once she is on site, so the pass she carries
+ * before arriving does not name one. The kiosk's own copy adds it.
+ */
+export const CONTRACTOR_PERMIT_ROW: PassRow = {
+  label: "Permit",
+  value: "PMT-4471 · hot works",
+  mono: true,
+};
+
 export function VisitorPassCard({
   className = "",
   /** The code is the same; only the room it gets differs by device. */

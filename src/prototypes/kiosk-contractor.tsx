@@ -1,7 +1,6 @@
 import * as React from "react";
 import { BackButton } from "@/components/back-button";
 import { ControlDeck } from "@/components/control-deck";
-import { WORK_NOTICES } from "@/components/notice";
 import { TabletFrame } from "@/components/tablet-frame";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -29,12 +28,9 @@ import {
   FindByNameScreen,
 } from "@/prototypes/kiosk-find-by-name";
 import { KioskLanding } from "@/prototypes/kiosk-landing";
-import { CheckedInScreen, PhotoScreen } from "@/prototypes/kiosk-steps";
+import { ContractorOnSite } from "@/prototypes/kiosk-contractor-onsite";
+import { PhotoScreen } from "@/prototypes/kiosk-steps";
 import { ScanPanel, useAutoScan } from "@/prototypes/scan-panel";
-import {
-  CONTRACTOR_PASS_CAPTION,
-  contractorPassRows,
-} from "@/prototypes/visitor-pass";
 
 /* -- the tape ------------------------------------------------------- */
 
@@ -431,26 +427,14 @@ export function KioskContractor({
             onDone={() => goTo(index + 1)}
           />
         );
-      /* Study K2, with the contractor's facts in it: what the reader
-       * settled, the way to the service lift, and the pass her phone is
-       * already carrying. */
+      /* Studies 4a / 4b / 4c: notices, the way, the pass. Three pages
+       * inside one step, because it is one arrival. */
       case "on-site":
         return (
-          <CheckedInScreen
+          <ContractorOnSite
             active={step === index}
             firstName={firstName}
-            status="On site · 08:04AM"
-            headline={`You're on site, ${firstName}. Level 4 whenever you're ready.`}
-            route={{
-              zone: "Lobby · ground floor",
-              target: "Service lift → Level 4",
-              caption:
-                "Past the café to the service corridor, lift on the right",
-            }}
-            notices={WORK_NOTICES}
-            passCaption={CONTRACTOR_PASS_CAPTION}
-            passRows={contractorPassRows(company.name || TRADE.company)}
-            passNote="Scan out at this reader when you leave. For security a visit cannot be ended from a phone."
+            company={company.name || TRADE.company}
             onDone={reset}
           />
         );
