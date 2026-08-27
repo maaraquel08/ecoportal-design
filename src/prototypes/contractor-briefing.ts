@@ -148,3 +148,40 @@ export function useBriefing() {
     retake,
   };
 }
+
+/** What this option is, once the question has been answered. */
+export type OptionState = "open" | "picked" | "correct" | "out";
+
+export function optionState(
+  option: BriefingOption,
+  picked: BriefingOption | null,
+): OptionState {
+  if (!picked) return "open";
+  if (option === picked) return "picked";
+  if (option.correct) return "correct";
+  return "out";
+}
+
+/**
+ * The line under the question. Before she answers it is the question's
+ * own ask; after, it is how much is left and the reassurance that a
+ * wrong answer is not held against her.
+ */
+export function askLine({
+  ask,
+  answered,
+  left,
+}: {
+  ask: string;
+  answered: boolean;
+  left: number;
+}) {
+  if (!answered) return ask;
+  const remaining =
+    left === 0
+      ? "That was the last one."
+      : left === 1
+        ? "One to go after this."
+        : `${left} to go after this.`;
+  return `${remaining} Nothing here is recorded against you personally.`;
+}

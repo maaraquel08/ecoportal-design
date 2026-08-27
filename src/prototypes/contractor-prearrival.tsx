@@ -1,11 +1,15 @@
 import * as React from "react";
+import { BackButton } from "@/components/back-button";
 import { ControlDeck } from "@/components/control-deck";
 import { NoticeList } from "@/components/notice";
 import { PhoneFrame, PhoneScreen } from "@/components/phone-frame";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { sentenceCase } from "@/lib/text";
+import { QuestionOption } from "@/prototypes/briefing-question";
 import {
+  askLine,
+  optionState,
   PASS_MARK,
   QUESTIONS,
   RESPONSIBILITIES,
@@ -23,6 +27,10 @@ import {
   REGISTERED,
   type Company,
 } from "@/prototypes/contractor-firms";
+import {
+  BLANK_PERSON,
+  type Person,
+} from "@/prototypes/contractor-person";
 import {
   CompanyScreen,
   PersonScreen,
@@ -221,19 +229,11 @@ function JobScreen({
             <Button size="cta" className="w-full" onClick={onContinue}>
               {known ? "Get cleared · 3 min" : "Set me up · 5 min"}
             </Button>
-            <Button
-              size="cta"
-              variant="secondary"
-              className="w-full"
-              onClick={onBack}
-            >
-              Back to email
-            </Button>
             <Footnote>Or do it when you get here. Either is fine.</Footnote>
           </>
         }
       >
-        <StepHeader step={step} total={total} />
+        <StepHeader step={step} total={total} onBack={onBack} />
 
         <div className="mt-4 overflow-hidden rounded-xl border border-line">
           <div className="bg-lane-tint px-5.5 py-5">
@@ -342,17 +342,10 @@ function SafetyScreen({
               >
                 Start · {QUESTIONS.length} questions
               </Button>
-              <Button
-                size="cta"
-                variant="secondary"
-                className="w-full"
-                onClick={onBack}
-              >
-                Back
-              </Button>
             </>
           }
         >
+          <BackButton onClick={onBack} className="mb-4" />
           <div className="flex items-center justify-between">
             <Mono className="text-lane-fill" size="text-[11px]">
               The briefing
@@ -476,36 +469,28 @@ function SafetyScreen({
           {question.situation}
         </h2>
         <p className="mt-2.5 text-base leading-normal text-fg-subtle">
-          {question.ask}
+          {askLine({
+            ask: question.ask,
+            answered,
+            left: deck.length - index - 1,
+          })}
         </p>
 
-        <div className="mt-5 flex flex-col gap-3">
-          {question.options.map((option) => {
-            const chosen = picked === option;
-            return (
-              <button
-                key={option.text}
-                onClick={() => answer(option)}
-                disabled={answered}
-                className={`rounded-lg border px-4.5 py-4 text-left text-[16.5px] leading-snug font-medium transition-colors duration-fast ease-out-quad focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring enabled:hover:bg-surface ${
-                  answered && option.correct
-                    ? "border-[1.5px] border-success-line bg-success-tint"
-                    : chosen
-                      ? "border-[1.5px] border-danger-line bg-danger-tint"
-                      : "border-line-strong disabled:opacity-50"
-                }`}
-              >
-                {option.text}
-              </button>
-            );
-          })}
+        {/* The same option component the glass uses, at phone scale:
+          * the rule opens inside the card she tapped rather than in a
+          * banner underneath the whole list. */}
+        <div className="mt-5 flex flex-col gap-3 pb-2">
+          {question.options.map((option) => (
+            <QuestionOption
+              key={option.text}
+              option={option}
+              state={optionState(option, picked)}
+              rule={question.rule}
+              scale="phone"
+              onSelect={() => answer(option)}
+            />
+          ))}
         </div>
-
-        {picked ? (
-          <Banner tone={picked.correct ? "success" : "danger"} className="mt-4">
-            {question.rule}
-          </Banner>
-        ) : null}
       </PhoneScreen>
     </>
   );
@@ -592,7 +577,26 @@ export function ContractorPrearrival({
   const [company, setCompany] = React.useState<Company>(
     known ? REGISTERED[0] : BLANK,
   );
-  const [firstName, setFirstName] = React.useState<string>(TRADE.firstName);
+  /**
+   * Her own fields, held here rather than inside the details screen,
+   * because the pass, the cleared screen and the tablet all read the
+   * same record. One shape, `Person`, shared with the kiosk.
+   *
+   * A known trade arrives with hers already on file; a first-timer's
+   * is empty apart from the address Dan's link was sent to, which is
+   * how the site looked her up in the first place.
+   */
+  const [person, setPerson] = React.useState<Person>(
+    known
+      ? {
+          ...BLANK_PERSON,
+          first: TRADE.firstName,
+          last: TRADE.lastName,
+          email: TRADE.email,
+        }
+      : { ...BLANK_PERSON, email: TRADE.email },
+  );
+  const firstName = person.first.trim() || TRADE.firstName;
 
   /* transitions.dev · 08 · Page side-by-side. */
   const [slots, setSlots] = React.useState<[number | null, number | null]>([
@@ -658,11 +662,10 @@ export function ContractorPrearrival({
       case "details":
         return (
           <PersonScreen
-            email={TRADE.email}
-            onContinue={(name) => {
-              setFirstName(name);
-              goTo(index + 1);
-            }}
+            company={company}
+            person={person}
+            onChange={setPerson}
+            onContinue={() => goTo(index + 1)}
             onBack={() => goTo(index - 1)}
             {...props}
           />

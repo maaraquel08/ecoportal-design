@@ -5,10 +5,8 @@ import { TabletFrame } from "@/components/tablet-frame";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { KioskLanding } from "@/prototypes/kiosk-landing";
-import {
-  CheckedInScreen,
-  PhotoScreen,
-} from "@/prototypes/kiosk-steps";
+import { KioskOnSite, visitorOnSite } from "@/prototypes/kiosk-onsite";
+import { PhotoScreen } from "@/prototypes/kiosk-steps";
 import { ScanPanel, useAutoScan } from "@/prototypes/scan-panel";
 import { BOOKINGS, type Booking } from "@/prototypes/bookings";
 import {
@@ -194,11 +192,20 @@ export function KioskArrival({
     4: (
       <PhotoScreen
         active={step === 4}
+        /* Nothing behind this screen was numbered, so a count would be
+         * counting screens she never saw. */
+        step={null}
         onBack={() => goTo(1)}
         onDone={() => goTo(5)}
       />
     ),
-    5: <CheckedInScreen active={step === 5} onDone={() => goTo(0)} />,
+    5: (
+      <KioskOnSite
+        active={step === 5}
+        content={visitorOnSite({})}
+        onDone={() => goTo(0)}
+      />
+    ),
   };
 
   return (

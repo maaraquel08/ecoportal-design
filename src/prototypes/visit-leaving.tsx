@@ -19,14 +19,69 @@ function sentenceCase(text: string) {
 /** How long the thank-you holds before the kiosk resets. */
 const RESET_SECONDS = 6;
 
+/**
+ * Both lanes leave the same way, because leaving is one physical event
+ * at one reader: hold the pass, be counted out. What differs is the
+ * day, the name, and what the building keeps — so those are declared
+ * per lane and the two screens read them.
+ */
+export type LeavingContent = {
+  day: string;
+  headline: string;
+  body: string;
+  /** Beside the find-me-by-name escape. R8: losing the pass cannot be
+   *  a dead end, or the building's list stops being true. */
+  hint: string;
+  thanks: string;
+  signedOut: string;
+  /** What was kept and what was not, said plainly. */
+  kept: { label: string; value: string }[];
+};
+
+export const visitorLeaving = (): LeavingContent => ({
+  day: "Thu 11 Sept",
+  headline: "Hold the same pass to sign out",
+  body: "The one you checked in with — on your phone, in your wallet, or printed.",
+  hint: "Lost your pass? Reception can sign you out",
+  thanks: "Thanks for visiting, Marta.",
+  signedOut:
+    "Signed out at 3:41pm. The building no longer counts you as inside.",
+  kept: [
+    { label: "Your photo", value: "Deleted just now" },
+    { label: "Kept for the building", value: "Name and visit times" },
+  ],
+});
+
+export const contractorLeaving = (): LeavingContent => ({
+  day: "Tue 9 Sept",
+  headline: "Hold the same pass to sign off",
+  body: "The one you signed on with — on your phone, in your wallet, or printed.",
+  hint: "Lost your pass? The desk can sign you off",
+  thanks: "That's you off site, Priya.",
+  signedOut:
+    "Signed off at 4:12pm. The building no longer counts you as inside.",
+  /* A trade's permit closes with her, which is the fact the fire
+   * warden needs and the one she would otherwise have to remember. */
+  kept: [
+    { label: "Your photo", value: "Deleted just now" },
+    { label: "Kept for the building", value: "Name and site times" },
+    {
+      label: "Hot works permit",
+      value: "PMT-4471 closed at 4:12pm · fire watch done",
+    },
+  ],
+});
+
 /* -- L0 · scan to sign out ------------------------------------------ */
 
 function SignOutScanScreen({
   active,
+  content,
   onBack,
   onScanned,
 }: {
   active: boolean;
+  content: LeavingContent;
   onBack: () => void;
   onScanned: () => void;
 }) {
@@ -41,7 +96,7 @@ function SignOutScanScreen({
             {capturing ? "Pass read" : "Signing out"}
           </span>
           <span className="h-4.5 w-px bg-line" />
-          <span className="text-[15px] text-fg-subtle">Thu 11 Sept</span>
+          <span className="text-[15px] text-fg-subtle">{content.day}</span>
         </div>
       </div>
 
@@ -50,11 +105,10 @@ function SignOutScanScreen({
 
         <div className="min-w-0 flex-1">
           <h2 className="text-[40px] leading-[1.08] font-bold tracking-[-0.03em]">
-            Hold the same pass to sign out
+            {content.headline}
           </h2>
           <p className="mt-3 max-w-[34ch] text-[19px] leading-normal text-fg-muted">
-            The one you checked in with — on your phone, in your wallet, or
-            printed.
+            {content.body}
           </p>
           <div className="mt-5 flex items-center gap-2.5">
             <span className="size-2.5 flex-none rounded-full bg-lane-base" />
@@ -71,7 +125,7 @@ function SignOutScanScreen({
         * arriving — so losing the pass cannot be a dead end. */}
       <div className="mt-5 flex items-center justify-between gap-6">
         <span className="font-mono text-[13px] text-fg-subtle">
-          Lost your pass? Reception can sign you out
+          {content.hint}
         </span>
         <Button variant="outline" size="cta" onClick={onScanned}>
           Find me by name
@@ -85,9 +139,11 @@ function SignOutScanScreen({
 
 function SignedOutScreen({
   active,
+  content,
   onDone,
 }: {
   active: boolean;
+  content: LeavingContent;
   onDone: () => void;
 }) {
   const [remaining, setRemaining] = React.useState(RESET_SECONDS);
@@ -136,27 +192,29 @@ function SignedOutScreen({
         </span>
 
         <h2 className="mt-6 text-[46px] leading-[1.06] font-bold tracking-[-0.035em]">
-          Thanks for visiting, Marta.
+          {content.thanks}
         </h2>
-        <p className="mt-2.5 text-[21px] text-fg-muted">
-          Signed out at 3:41pm. The building no longer counts you as inside.
-        </p>
+        <p className="mt-2.5 text-[21px] text-fg-muted">{content.signedOut}</p>
 
         {/* What was kept and what was not, said plainly rather than
-          * buried in a policy nobody reads at a kiosk. */}
+          * buried in a policy nobody reads at a kiosk. An odd last card
+          * takes the full width rather than leaving a gap. */}
         <div className="mt-7 grid w-full max-w-[600px] grid-cols-2 gap-3">
-          <div className="rounded-lg border border-line px-5 py-4 text-left">
-            <div className="text-sm text-fg-subtle">Your photo</div>
-            <div className="mt-0.5 text-[19px] font-semibold tracking-[-0.015em]">
-              Deleted just now
+          {content.kept.map((item, index) => (
+            <div
+              key={item.label}
+              className={`rounded-lg border border-line px-5 py-4 text-left ${
+                index === content.kept.length - 1 && content.kept.length % 2
+                  ? "col-span-2"
+                  : ""
+              }`}
+            >
+              <div className="text-sm text-fg-subtle">{item.label}</div>
+              <div className="mt-0.5 text-[19px] font-semibold tracking-[-0.015em]">
+                {item.value}
+              </div>
             </div>
-          </div>
-          <div className="rounded-lg border border-line px-5 py-4 text-left">
-            <div className="text-sm text-fg-subtle">Kept for the building</div>
-            <div className="mt-0.5 text-[19px] font-semibold tracking-[-0.015em]">
-              Name and visit times
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
@@ -179,9 +237,11 @@ function SignedOutScreen({
 
 export function VisitLeaving({
   tabs,
+  content,
   onExit,
 }: {
   tabs: React.ReactNode;
+  content: LeavingContent;
   onExit: () => void;
 }) {
   const [step, setStep] = React.useState<Step>(0);
@@ -224,11 +284,14 @@ export function VisitLeaving({
     0: (
       <SignOutScanScreen
         active={step === 0}
+        content={content}
         onBack={onExit}
         onScanned={() => goTo(1)}
       />
     ),
-    1: <SignedOutScreen active={step === 1} onDone={onExit} />,
+    1: (
+      <SignedOutScreen active={step === 1} content={content} onDone={onExit} />
+    ),
   };
 
   return (

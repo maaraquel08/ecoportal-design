@@ -32,9 +32,17 @@ const TILES: Tile[] = [
 export function LobbyMap({
   fill,
   scale,
+  /** The tinted column on the right. A visitor is sent to the east
+   *  lifts; a trade with tools is sent to the service lift. */
+  destination = { label: "East lifts", note: "All levels" },
+  /** The floor bubble at the end of the route. `null` when the tinted
+   *  destination says it on its own. */
+  pin = "9",
 }: {
   fill?: boolean;
   scale?: number;
+  destination?: { label: string; note?: string };
+  pin?: string | null;
 }) {
   const plan = (
     <div
@@ -83,11 +91,13 @@ export function LobbyMap({
         }}
       >
         <div className="text-[13px] leading-tight font-semibold text-house-fill">
-          East lifts
+          {destination.label}
         </div>
-        <div className="font-mono text-[10px] tracking-[0.06em] text-house-fill/80 uppercase">
-          All levels
-        </div>
+        {destination.note ? (
+          <div className="font-mono text-[10px] tracking-[0.06em] text-house-fill/80 uppercase">
+            {destination.note}
+          </div>
+        ) : null}
       </div>
 
       <svg
@@ -95,7 +105,7 @@ export function LobbyMap({
         fill="none"
         preserveAspectRatio="none"
         className="pointer-events-none absolute inset-0 size-full"
-        aria-label="Walking route from the kiosks to the east lifts"
+        aria-label="Walking route from the kiosks to the lifts"
       >
         <path
           d="M128 95H404"
@@ -122,12 +132,14 @@ export function LobbyMap({
       </div>
 
       {/* Where she is going. */}
-      <div
-        className="t-map-pin absolute flex size-8.5 items-center justify-center rounded-full border-3 border-bg bg-house-base text-sm font-bold text-accent-fg"
-        style={{ left: pc(388, W), top: pc(78, H) }}
-      >
-        9
-      </div>
+      {pin ? (
+        <div
+          className="t-map-pin absolute flex size-8.5 items-center justify-center rounded-full border-3 border-bg bg-house-base text-sm font-bold text-accent-fg"
+          style={{ left: pc(388, W), top: pc(78, H) }}
+        >
+          {pin}
+        </div>
+      ) : null}
     </div>
   );
 

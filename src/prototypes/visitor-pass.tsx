@@ -37,7 +37,9 @@ function Row({
 export type PassRow = { label: string; value: string; mono?: boolean };
 
 /** The visitor pass, unless a lane supplies its own facts. */
-const VISITOR_PASS: PassRow[] = [
+export const VISITOR_PASS_CAPTION = "V-2208 · exp 6:00pm";
+
+export const VISITOR_PASS_ROWS: PassRow[] = [
   { label: "Host", value: "Sam Whitfield" },
   { label: "Level", value: "9 · Kestrel Legal" },
   { label: "Valid", value: "Thu · to 6:00pm", mono: true },
@@ -56,6 +58,16 @@ export const contractorPassRows = (company: string): PassRow[] => [
   { label: "Valid", value: "Tue · 7:00am to 6:00pm", mono: true },
 ];
 
+/**
+ * The permit only exists once she is on site, so the pass she carries
+ * before arriving does not name one. The kiosk's own copy adds it.
+ */
+export const CONTRACTOR_PERMIT_ROW: PassRow = {
+  label: "Permit",
+  value: "PMT-4471 · hot works",
+  mono: true,
+};
+
 export function VisitorPassCard({
   className = "",
   /** The code is the same; only the room it gets differs by device. */
@@ -63,9 +75,9 @@ export function VisitorPassCard({
   /** Let the code take whatever height is left, rather than a fixed size. */
   fill,
   /** The pass's own reference and expiry, printed under the code. */
-  caption = "V-2208 · exp 6:00pm",
+  caption = VISITOR_PASS_CAPTION,
   /** What the pass asserts. Three rows, whichever lane issued it. */
-  rows = VISITOR_PASS,
+  rows = VISITOR_PASS_ROWS,
 }: {
   className?: string;
   qrSize?: number;

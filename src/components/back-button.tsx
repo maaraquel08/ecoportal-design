@@ -11,12 +11,22 @@ import { Button } from "@/components/ui/button";
 export function BackButton({
   children = "Back",
   onClick,
+  size = "md",
+  className = "",
 }: {
   children?: React.ReactNode;
   onClick: () => void;
+  /** The rail on a tablet wants a bigger target than a phone header. */
+  size?: "md" | "lg";
+  className?: string;
 }) {
   return (
-    <Button variant="outline" size="md" className="w-fit" onClick={onClick}>
+    <Button
+      variant="outline"
+      size={size}
+      className={`w-fit ${className}`}
+      onClick={onClick}
+    >
       <svg
         width="16"
         height="16"

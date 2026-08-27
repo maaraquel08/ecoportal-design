@@ -1,8 +1,8 @@
 import * as React from "react";
 import { BackButton } from "@/components/back-button";
 import { ControlDeck } from "@/components/control-deck";
-import { type Notice } from "@/components/notice";
 import { TabletFrame } from "@/components/tablet-frame";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useLane } from "@/hooks/use-lane";
 import { sentenceCase } from "@/lib/text";
@@ -12,19 +12,28 @@ import {
   type Company,
 } from "@/prototypes/contractor-firms";
 import {
+  BLANK_PERSON,
+  type Person,
+} from "@/prototypes/contractor-person";
+import {
   BriefingScreen,
   FirmScreen,
   SIGN_ON_TOTAL,
   TradeDetailsScreen,
   WhoScreen,
 } from "@/prototypes/kiosk-contractor-signon";
-import { KioskLanding } from "@/prototypes/kiosk-landing";
-import { CheckedInScreen, PhotoScreen } from "@/prototypes/kiosk-steps";
-import { ScanPanel, useAutoScan } from "@/prototypes/scan-panel";
+import { BOOKINGS, type Booking } from "@/prototypes/bookings";
 import {
-  CONTRACTOR_PASS_CAPTION,
-  contractorPassRows,
-} from "@/prototypes/visitor-pass";
+  CodeScreen,
+  FindByNameScreen,
+} from "@/prototypes/kiosk-find-by-name";
+import { KioskLanding } from "@/prototypes/kiosk-landing";
+import {
+  contractorOnSite,
+  KioskOnSite,
+} from "@/prototypes/kiosk-onsite";
+import { PhotoScreen } from "@/prototypes/kiosk-steps";
+import { ScanPanel, useAutoScan } from "@/prototypes/scan-panel";
 
 /* -- the tape ------------------------------------------------------- */
 
@@ -52,6 +61,8 @@ type ScreenId =
   | "landing"
   | "who"
   | "reader"
+  | "find"
+  | "code"
   | "company"
   | "details"
   | "briefing"
@@ -72,7 +83,17 @@ const ON_SITE: TapeStep = { id: "on-site", label: "on site" };
 
 const ROUTE_TAPE: Record<Route, readonly TapeStep[]> = {
   unchosen: [WHO],
-  returning: [WHO, { id: "reader", label: "the reader" }, PHOTO, ON_SITE],
+  /* Find-by-name is not a step after the reader, it is the way round
+   * it: scanning jumps the two, exactly as the visitor's scan path
+   * jumps them. Both ways converge on the photo. */
+  returning: [
+    WHO,
+    { id: "reader", label: "the reader" },
+    { id: "find", label: "finding your job" },
+    { id: "code", label: "the code" },
+    PHOTO,
+    ON_SITE,
+  ],
   "first-time": [
     WHO,
     { id: "company", label: "your company" },
@@ -97,45 +118,15 @@ const TRADE = {
 const WILL_CHECK = [
   {
     title: "Who you are",
-    body: "Read off the code. Nothing to type, nothing to spell out.",
+    body: "Read off the pass. Nothing to type, nothing to spell out.",
   },
   {
     title: "Induction",
-    body: "That it is current for this site — you did it last night.",
+    body: "That it is still current for this site. You did it once; we kept it.",
   },
   {
     title: "Permits",
     body: "Anything open against today's work, and who signed it.",
-  },
-];
-
-/** What the reader settled, once it has. */
-const CHECKED = [
-  { label: "Identity", value: "Code matched" },
-  { label: "Induction", value: "Current to 4 Nov" },
-  { label: "Permit", value: "PMT-4471 signed" },
-];
-
-/** The same three facts for a trade who settled them at the glass. */
-const CHECKED_HERE = [
-  { label: "Identity", value: "Taken at the kiosk" },
-  { label: "Briefing", value: "Passed today" },
-  { label: "Access", value: "Level 4 · to 6:00pm" },
-];
-
-/** Today, as it concerns someone working on Level 4. */
-const SITE_NOTICES: Notice[] = [
-  {
-    category: "Permit",
-    when: "To 5:00pm",
-    title: "Hot works PMT-4471 · Level 4 riser",
-    body: "Fire watch for thirty minutes after you stop.",
-  },
-  {
-    category: "Access",
-    when: "Until 5pm",
-    title: "Level 4 passenger lift out",
-    body: "Service lift or the stairs. Tools go in the service lift.",
   },
 ];
 
@@ -145,12 +136,14 @@ function ReaderScreen({
   active,
   onBack,
   onScanned,
+  onFindByName,
 }: {
   active: boolean;
   /** Back goes to whichever landing we came in through — ours, or the
    *  tab that opened us. */
   onBack: () => void;
   onScanned: () => void;
+  onFindByName: () => void;
 }) {
   const { capturing, readNow } = useAutoScan(active, onScanned);
 
@@ -162,7 +155,7 @@ function ReaderScreen({
         <BackButton onClick={onBack} />
         <div className="flex items-center gap-4">
           <span className="font-mono text-[13px] tracking-[0.14em] text-lane-fill uppercase">
-            {capturing ? "Code read" : "Waiting for a code"}
+            {capturing ? "Pass read" : "Waiting for a pass"}
           </span>
           <span className="h-4.5 w-px bg-line" />
           <span className="text-[15px] text-fg-subtle">Tue 9 Sept</span>
@@ -174,11 +167,11 @@ function ReaderScreen({
 
         <div className="min-w-0 flex-1">
           <h2 className="text-[40px] leading-[1.08] font-bold tracking-[-0.03em]">
-            Hold your clearance code to the reader
+            Hold your pass to the reader
           </h2>
           <p className="mt-3 max-w-[34ch] text-[19px] leading-normal text-fg-muted">
-            The one from last night's email. Wallet, screen or paper — all
-            fine.
+            The QR from your clearance email, or the one you were issued on an
+            earlier job here. Wallet, screen or paper — all fine.
           </p>
 
           <div className="mt-5 flex flex-col gap-2.5">
@@ -207,13 +200,15 @@ function ReaderScreen({
 
       <Separator />
 
+      {/* The same escape the visitor's scanner offers, in the same
+        * place: a lost pass is the common case, not an error. */}
       <div className="mt-5 flex items-center justify-between gap-6">
         <span className="font-mono text-[13px] text-fg-subtle">
           Hold steady for about a second
         </span>
-        <span className="text-[15px] text-fg-subtle">
-          No code? The desk can look you up.
-        </span>
+        <Button variant="outline" size="cta" onClick={onFindByName}>
+          Find me by name
+        </Button>
       </div>
     </div>
   );
@@ -224,22 +219,50 @@ function ReaderScreen({
 export function KioskContractor({
   tabs,
   onExit,
+  onLeaving,
 }: {
   tabs: React.ReactNode;
   /** Set when the flow was opened by another tab's landing, so back
    *  and the reset both return there instead of to our own. */
   onExit?: () => void;
+  /** The exit door on our own landing. Leaving is one reader for both
+   *  lanes, so this hands off to that flow rather than drawing it
+   *  again — and it is only wired when we draw the landing. */
+  onLeaving?: () => void;
 }) {
   const [route, setRoute] = React.useState<Route>("unchosen");
   /** The firm she picks, or types. Empty until the company step. */
   const [company, setCompany] = React.useState<Company>(BLANK);
-  const [firstName, setFirstName] = React.useState<string>(TRADE.firstName);
+  /**
+   * Which door off the landing she came through, which settles two
+   * things.
+   *
+   * Back: the reader can be reached by the question or by the pass
+   * shortcut that skips it, and Back has to return through the one she
+   * used — the screen before it on the tape is not the screen she was
+   * looking at.
+   *
+   * Lane: "Here to work" is her choosing the contractor lane, so
+   * everything behind it is orange. Holding up a pass she already has
+   * is the platform doing its job for anyone — same as the visitor
+   * kiosk's own scan path — so that way through stays green.
+   */
+  const [door, setDoor] = React.useState<"work" | "pass">("work");
+  /** Which expected job the find-by-name path is verifying. */
+  const [booking, setBooking] = React.useState<Booking>(BOOKINGS[0]);
+  /** Her own fields, in the shape the phone's sign-up uses too, so
+   *  the two doors are filling in one record. */
+  const [person, setPerson] = React.useState<Person>(BLANK_PERSON);
+  const firstName = person.first.trim() || TRADE.firstName;
 
   /** The tape for a route, with the landing in front of it when this
    *  tab is the one that draws the landing. */
   const tapeFor = (next: Route) =>
     onExit ? ROUTE_TAPE[next] : [LANDING, ...ROUTE_TAPE[next]];
   const tape = tapeFor(route);
+  /** Screens address each other by name: the same screen sits at a
+   *  different number on each tape. */
+  const indexOf = (id: ScreenId) => tape.findIndex((entry) => entry.id === id);
 
   const [step, setStep] = React.useState(0);
 
@@ -247,10 +270,10 @@ export function KioskContractor({
    * lane, so it belongs to the house; behind the work door she has
    * already chosen, and the screens are hers. */
   const { setLane } = useLane();
-  const onLanding = tape[step].id === "landing";
+  const platform = tape[step].id === "landing" || door === "pass";
   React.useEffect(
-    () => setLane(onLanding ? "house" : "contractor"),
-    [onLanding, setLane],
+    () => setLane(platform ? "house" : "contractor"),
+    [platform, setLane],
   );
 
   /* transitions.dev · 08 · Page side-by-side. A slot holds the screen
@@ -304,8 +327,9 @@ export function KioskContractor({
   /** The kiosk resets to whatever it was showing before this trade,
    *  forgetting which door she came through. */
   const reset = () => {
+    setDoor("work");
     setCompany(BLANK);
-    setFirstName(TRADE.firstName);
+    setPerson(BLANK_PERSON);
     if (onExit) {
       onExit();
       return;
@@ -335,8 +359,15 @@ export function KioskContractor({
       case "landing":
         return (
           <KioskLanding
-            onWork={() => goTo(index + 1)}
-            onScan={() => goTo(index + 2, "returning")}
+            onWork={() => {
+              setDoor("work");
+              goTo(index + 1);
+            }}
+            onScan={() => {
+              setDoor("pass");
+              goTo(index + 2, "returning");
+            }}
+            onLeaving={onLeaving}
           />
         );
       /* One question, two big doors. Everything after it differs. */
@@ -361,18 +392,22 @@ export function KioskContractor({
         return (
           <TradeDetailsScreen
             company={company}
-            onContinue={(name) => {
-              setFirstName(name);
-              goTo(index + 1);
-            }}
+            person={person}
+            onChange={setPerson}
+            onContinue={() => goTo(index + 1)}
             onBack={backFrom(index)}
           />
         );
       case "briefing":
         return (
           <BriefingScreen
-            active={step === index}
             onContinue={() => goTo(index + 1)}
+            /* She took the code, so the glass lets her go. There is no
+             * screen after this one on her phone's behalf: the tablet
+             * goes back to the landing for whoever is next, and she
+             * comes back in the way every cleared trade does — the
+             * pass shortcut, straight to the reader. */
+            onHandedOff={reset}
             onBack={backFrom(index)}
           />
         );
@@ -380,42 +415,75 @@ export function KioskContractor({
         return (
           <ReaderScreen
             active={step === index}
+            /* Straight in off the landing means straight back out to
+             * it, with the doors open again. */
+            onBack={
+              door === "pass" && !onExit
+                ? () => goTo(indexOf("landing"), "unchosen")
+                : backFrom(index)
+            }
+            /* A pass that reads skips the two screens that exist to
+             * do without one. */
+            onScanned={() => goTo(indexOf("photo"))}
+            onFindByName={() => goTo(index + 1)}
+          />
+        );
+      /* X1 · the masked list, and X2/X3 · the code to her own inbox.
+       * The visitor lane's screens, unchanged apart from the noun. */
+      case "find":
+        return (
+          <FindByNameScreen
+            entity={{ one: "job", many: "jobs" }}
             onBack={backFrom(index)}
-            onScanned={() => goTo(index + 1)}
+            onPick={(picked) => {
+              setBooking(picked);
+              goTo(index + 1);
+            }}
+          />
+        );
+      case "code":
+        return (
+          <CodeScreen
+            active={step === index}
+            booking={booking}
+            onBack={backFrom(index)}
+            onVerified={() => goTo(index + 1)}
+            onGiveUp={reset}
           />
         );
       case "photo":
         return (
           <PhotoScreen
             active={step === index}
+            /* The sign-on numbers its four steps, so the photo is the
+             * last of them. A returning trade only held up a pass, so
+             * there is no count for the label to belong to. */
             step={
-              route === "first-time" ? `${SIGN_ON_TOTAL} of ${SIGN_ON_TOTAL}` : "2 of 3"
+              route === "first-time"
+                ? `${SIGN_ON_TOTAL} of ${SIGN_ON_TOTAL}`
+                : null
             }
-            onBack={backFrom(index)}
+            /* Back from the photo is the reader, whichever way she
+             * got past it — the code screen is not somewhere to
+             * return to once it has let her through. */
+            onBack={
+              route === "returning"
+                ? () => goTo(indexOf("reader"))
+                : backFrom(index)
+            }
             onDone={() => goTo(index + 1)}
           />
         );
-      /* Study K2, with the contractor's facts in it: what the reader
-       * settled, the way to the service lift, and the pass her phone is
-       * already carrying. */
+      /* Studies 4a / 4b / 4c: notices, the way, the pass. Three pages
+       * inside one step, because it is one arrival. */
       case "on-site":
         return (
-          <CheckedInScreen
+          <KioskOnSite
             active={step === index}
-            firstName={firstName}
-            status="On site · 08:04AM"
-            headline={`You're on site, ${firstName}. Level 4 whenever you're ready.`}
-            checks={route === "first-time" ? CHECKED_HERE : CHECKED}
-            route={{
-              zone: "Lobby · ground floor",
-              target: "Service lift → Level 4",
-              caption:
-                "Past the café to the service corridor, lift on the right",
-            }}
-            notices={SITE_NOTICES}
-            passCaption={CONTRACTOR_PASS_CAPTION}
-            passRows={contractorPassRows(company.name || TRADE.company)}
-            passNote="Scan out at this reader when you leave. For security a visit cannot be ended from a phone."
+            content={contractorOnSite({
+              firstName,
+              company: company.name || TRADE.company,
+            })}
             onDone={reset}
           />
         );

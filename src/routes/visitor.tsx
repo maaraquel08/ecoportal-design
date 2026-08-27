@@ -6,8 +6,8 @@ import { KioskContractor } from "@/prototypes/kiosk-contractor";
 import { KioskHandoff } from "@/prototypes/kiosk-handoff";
 import { KioskPhone } from "@/prototypes/kiosk-phone";
 import { KioskVisiting } from "@/prototypes/kiosk-visiting";
-import { VisitDuring } from "@/prototypes/visit-during";
-import { VisitLeaving } from "@/prototypes/visit-leaving";
+import { VisitDuring, visitorDuring } from "@/prototypes/visit-during";
+import { VisitLeaving, visitorLeaving } from "@/prototypes/visit-leaving";
 import { VisitorPrearrival } from "@/prototypes/visitor-prearrival";
 
 type Scenario =
@@ -143,7 +143,7 @@ export function VisitorPage() {
   if (scenario === "during") {
     return (
       <div className="flex flex-col items-center px-8 pt-12 pb-44">
-        <VisitDuring tabs={tabs} />
+        <VisitDuring tabs={tabs} content={visitorDuring()} />
       </div>
     );
   }
@@ -151,7 +151,11 @@ export function VisitorPage() {
   if (scenario === "leaving") {
     return (
       <div className="w-full pt-12 pb-44">
-        <VisitLeaving tabs={tabs} onExit={() => setScenario("kiosk")} />
+        <VisitLeaving
+          tabs={tabs}
+          content={visitorLeaving()}
+          onExit={() => setScenario("kiosk")}
+        />
       </div>
     );
   }

@@ -1,10 +1,21 @@
 import * as React from "react";
 import { ControlDeck } from "@/components/control-deck";
-import { NoticeList, TODAY_NOTICES, type Notice } from "@/components/notice";
+import {
+  MY_NOTICES,
+  NoticeList,
+  TODAY_NOTICES,
+  type Notice,
+} from "@/components/notice";
 import { PhoneFrame, PhoneScreen } from "@/components/phone-frame";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
-import { VisitorPassCard } from "@/prototypes/visitor-pass";
+import {
+  CONTRACTOR_PASS_CAPTION,
+  CONTRACTOR_PERMIT_ROW,
+  contractorPassRows,
+  VisitorPassCard,
+  type PassRow,
+} from "@/prototypes/visitor-pass";
 
 /* -- the tape ------------------------------------------------------- */
 
@@ -21,17 +32,86 @@ function sentenceCase(text: string) {
  * the check-in screen says she will see them again. Journey C, R7:
  * today's warnings reach everyone in the building, not just the people
  * standing at a kiosk.
+ *
+ * Both lanes get the same two screens: where she stands now, and the
+ * one thing that moved while she was working. Only the facts differ,
+ * so they are declared per lane and the screens read them.
  */
-const UPDATED_NOTICE: Notice = {
-  category: "Access",
-  when: "From 2:40pm",
-  title: "Level 4 lift back in service",
-  body: "The technician has finished. Both lifts are running.",
+export type DuringContent = {
+  status: string;
+  since: string;
+  headline: string;
+  body: string;
+  notices: Notice[];
+  passCaption?: string;
+  passRows?: PassRow[];
+  changed: {
+    at: string;
+    headline: string;
+    /** The good news, said before the detail. */
+    banner: string;
+    notice: Notice;
+    /** What still stands, under the thing that moved. */
+    stands: Notice[];
+    footnote: string;
+  };
 };
+
+export const visitorDuring = (): DuringContent => ({
+  status: "On site",
+  since: "Since 9:12am",
+  headline: "You're checked in",
+  body: "Level 9 · Kestrel Legal. Your pass opens the gates on the way through.",
+  notices: TODAY_NOTICES,
+  changed: {
+    at: "Updated · 2:40pm",
+    headline: "Something changed while you were upstairs",
+    banner: "The Level 4 lift is back in service. Nothing you need to do.",
+    notice: {
+      category: "Access",
+      when: "From 2:40pm",
+      title: "Level 4 lift back in service",
+      body: "The technician has finished. Both lifts are running.",
+    },
+    stands: [TODAY_NOTICES[0]],
+    footnote: "Two notices today, one updated.",
+  },
+});
+
+export const contractorDuring = ({
+  company,
+}: {
+  company: string;
+}): DuringContent => ({
+  status: "On site",
+  since: "Since 7:52am",
+  headline: "You're signed on",
+  body: "Level 4 · riser cupboard. Your pass opens the gates and the service lift.",
+  /* The three that touch her own floor. The other three are true of
+   * the building and she read them at the kiosk. */
+  notices: MY_NOTICES,
+  passCaption: CONTRACTOR_PASS_CAPTION,
+  passRows: [...contractorPassRows(company), CONTRACTOR_PERMIT_ROW],
+  changed: {
+    at: "Updated · 2:40pm",
+    headline: "Something changed on Level 4",
+    banner: "The riser is yours for the rest of the day. Nothing to do.",
+    notice: {
+      category: "Coordination",
+      scope: "your floor",
+      when: "From 2:40pm",
+      title: "The lift technician has left Level 4",
+      body: "He has finished in the riser space. You have it to yourself.",
+    },
+    /* Her permit still runs to five, whatever else moved. */
+    stands: [MY_NOTICES[1]],
+    footnote: "Three notices today, one updated.",
+  },
+});
 
 /* -- D0 · on site --------------------------------------------------- */
 
-function OnSiteScreen() {
+function OnSiteScreen({ content }: { content: DuringContent }) {
   return (
     <PhoneScreen
       footer={
@@ -51,24 +131,28 @@ function OnSiteScreen() {
             <span className="size-2 rounded-full bg-lane-base" />
           </span>
           <span className="font-mono text-xs tracking-[0.14em] text-lane-fill uppercase">
-            On site
+            {content.status}
           </span>
         </span>
         <span className="font-mono text-[13px] text-fg-subtle">
-          Since 9:12am
+          {content.since}
         </span>
       </div>
 
       <h2 className="mt-3 text-[29px] leading-tight font-bold tracking-[-0.03em]">
-        You're checked in
+        {content.headline}
       </h2>
       <p className="mt-1.5 text-[15px] leading-normal text-fg-muted">
-        Level 9 · Kestrel Legal. Your pass opens the gates on the way through.
+        {content.body}
       </p>
 
-      <VisitorPassCard className="mt-4.5" />
+      <VisitorPassCard
+        className="mt-4.5"
+        caption={content.passCaption}
+        rows={content.passRows}
+      />
 
-      <NoticeList className="mt-3.5" />
+      <NoticeList className="mt-3.5" notices={content.notices} />
 
       <p className="mt-3.5 pb-2 text-[15px] leading-normal text-fg-muted">
         We will tell you here if anything about the building changes while you
@@ -80,7 +164,14 @@ function OnSiteScreen() {
 
 /* -- D1 · the day changed ------------------------------------------- */
 
-function DayChangedScreen({ onBack }: { onBack: () => void }) {
+function DayChangedScreen({
+  content,
+  onBack,
+}: {
+  content: DuringContent;
+  onBack: () => void;
+}) {
+  const { changed } = content;
   return (
     <PhoneScreen
       footer={
@@ -89,30 +180,32 @@ function DayChangedScreen({ onBack }: { onBack: () => void }) {
             Got it
           </Button>
           <p className="text-center text-[13px] text-fg-subtle">
-            Two notices today, one updated.
+            {changed.footnote}
           </p>
         </>
       }
     >
       <div className="flex items-center justify-between gap-3">
         <span className="font-mono text-xs tracking-[0.14em] text-lane-fill uppercase">
-          Updated · 2:40pm
+          {changed.at}
         </span>
-        <span className="font-mono text-[13px] text-fg-subtle">On site</span>
+        <span className="font-mono text-[13px] text-fg-subtle">
+          {content.status}
+        </span>
       </div>
 
       <h2 className="mt-3 text-[29px] leading-tight font-bold tracking-[-0.03em]">
-        Something changed while you were upstairs
+        {changed.headline}
       </h2>
 
       <Banner tone="success" className="mt-4">
-        The Level 4 lift is back in service. Nothing you need to do.
+        {changed.banner}
       </Banner>
 
       {/* The changed notice first, then what still stands. */}
       <NoticeList
         className="mt-3.5"
-        notices={[UPDATED_NOTICE, TODAY_NOTICES[0]]}
+        notices={[changed.notice, ...changed.stands]}
       />
 
       <p className="mt-3.5 pb-2 text-[15px] leading-normal text-fg-muted">
@@ -125,7 +218,13 @@ function DayChangedScreen({ onBack }: { onBack: () => void }) {
 
 /* -- the prototype -------------------------------------------------- */
 
-export function VisitDuring({ tabs }: { tabs: React.ReactNode }) {
+export function VisitDuring({
+  tabs,
+  content,
+}: {
+  tabs: React.ReactNode;
+  content: DuringContent;
+}) {
   const [step, setStep] = React.useState<Step>(0);
 
   /* transitions.dev · 08 · Page side-by-side. */
@@ -163,8 +262,8 @@ export function VisitDuring({ tabs }: { tabs: React.ReactNode }) {
       : "calc(var(--page-slide-distance) * -1)";
 
   const screens: Record<Step, React.ReactNode> = {
-    0: <OnSiteScreen />,
-    1: <DayChangedScreen onBack={() => goTo(0)} />,
+    0: <OnSiteScreen content={content} />,
+    1: <DayChangedScreen content={content} onBack={() => goTo(0)} />,
   };
 
   return (

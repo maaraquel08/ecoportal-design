@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EMAIL_RE, required } from "@/lib/form";
+import { required } from "@/lib/form";
 import {
   Footnote,
   Mono,
@@ -42,6 +42,13 @@ import {
   REGISTERED,
   type Company,
 } from "@/prototypes/contractor-firms";
+import {
+  CompanyReadOnly,
+  personComplete,
+  personFields,
+  PersonFieldRow,
+  type Person,
+} from "@/prototypes/contractor-person";
 import { useShakeInvalid } from "@/prototypes/use-shake-invalid";
 
 /* -- the screens ---------------------------------------------------- */
@@ -140,15 +147,6 @@ export function CompanyScreen({
               <Button size="cta" type="submit" className="w-full" onClick={shake}>
                 Continue
               </Button>
-              <Button
-                size="cta"
-                variant="secondary"
-                type="button"
-                className="w-full"
-                onClick={onBack}
-              >
-                Back to the job
-              </Button>
               <Footnote>
                 Once for the firm — not per job, and not per person.
               </Footnote>
@@ -161,6 +159,7 @@ export function CompanyScreen({
             total={total}
             title="Who do you work for?"
             body="If your firm is already registered with the building, the rest of this fills itself."
+            onBack={onBack}
           />
 
           <Field name="companyName" className="mt-4.5">
@@ -419,25 +418,41 @@ export function CompanyScreen({
   );
 }
 
-/* -- personal information ------------------------------------------ */
+/* -- personal information · and this job --------------------------- */
+
+/**
+ * The same merged form as the glass, one column wide.
+ *
+ * A trade who filled this in on her phone last night and a trade
+ * filling it in at the tablet in the morning are answering the same
+ * questions, in the same order, under the same labels — because both
+ * screens render `PERSON_FIELDS`. What the phone changes is that the
+ * email is already known: it is the address Dan's link was sent to,
+ * and a different address would be a different person.
+ */
 
 export function PersonScreen({
+  company,
+  person,
+  onChange,
   onContinue,
   onBack,
-  email,
   step,
   total,
 }: {
-  onContinue: (firstName: string) => void;
+  /** Settled on the step before this one, so it is shown, not asked. */
+  company: Company;
+  person: Person;
+  onChange: (next: Person) => void;
+  onContinue: () => void;
   onBack: () => void;
-  /** The address the clearance link was sent to. It is how the site
-   *  found — or failed to find — this person, so it is not editable
-   *  here: a different address would be a different person. */
-  email: string;
   step: number;
   total: number;
 }) {
   const { scopeRef, shake } = useShakeInvalid<HTMLFormElement>();
+
+  const set = (key: keyof Person) => (value: string) =>
+    onChange({ ...person, [key]: value });
 
   return (
     <>
@@ -445,12 +460,9 @@ export function PersonScreen({
       <Form
         ref={scopeRef}
         className="min-h-0 flex-1 gap-0"
-        onFormSubmit={(values) => {
-          const first = String(values.first ?? "").trim();
-          const last = String(values.last ?? "").trim();
-          const email = String(values.email ?? "").trim();
-          if (!first || !last || !EMAIL_RE.test(email)) return;
-          onContinue(first);
+        onFormSubmit={() => {
+          if (!personComplete(person)) return;
+          onContinue();
         }}
       >
         <PhoneScreen
@@ -458,15 +470,6 @@ export function PersonScreen({
             <>
               <Button size="cta" type="submit" className="w-full" onClick={shake}>
                 Create my account
-              </Button>
-              <Button
-                size="cta"
-                variant="secondary"
-                type="button"
-                className="w-full"
-                onClick={onBack}
-              >
-                Back
               </Button>
             </>
           }
@@ -476,103 +479,54 @@ export function PersonScreen({
             step={step}
             total={total}
             title="And who are you?"
-            body="Five fields, and only these five. Nothing here is asked again on your next job."
+            body="Your account and this job, on one screen. Three are required, and none of it is asked again on your next job."
+            onBack={onBack}
           />
 
-          <Fieldset className="mt-4.5 pb-2">
-            <FieldsetLegend>Your details</FieldsetLegend>
+          <Fieldset className="mt-4.5">
+            <FieldsetLegend>
+              Your details
+              <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
+                Asked once ever
+              </span>
+            </FieldsetLegend>
 
-            <Field
-              name="first"
-              validationMode="onSubmit"
-              validate={required("First name")}
-            >
-              <FieldLabel>First name</FieldLabel>
-              <FieldControl
-                placeholder="Priya"
-                autoComplete="given-name"
-                autoCapitalize="words"
-                className="h-12 text-base"
+            {personFields("identity").map((field) => (
+              <PersonFieldRow
+                key={field.key}
+                field={field}
+                surface="phone"
+                value={person[field.key]}
+                onChange={set(field.key)}
+                /* The address the clearance link came to. It is how
+                 * the site found — or failed to find — this person. */
+                locked={field.key === "email"}
               />
-              <FieldError />
-            </Field>
-
-            <Field
-              name="last"
-              validationMode="onSubmit"
-              validate={required("Last name")}
-            >
-              <FieldLabel>Last name</FieldLabel>
-              <FieldControl
-                placeholder="Raman"
-                autoComplete="family-name"
-                autoCapitalize="words"
-                className="h-12 text-base"
-              />
-              <FieldError />
-            </Field>
-
-            <Field
-              name="email"
-              validationMode="onSubmit"
-              validate={(value) => {
-                const email = String(value ?? "").trim();
-                if (!email) return "Enter your email — your pass is sent here";
-                if (!EMAIL_RE.test(email))
-                  return "That email doesn't look right — check for a typo";
-                return null;
-              }}
-            >
-              <FieldLabel>Email</FieldLabel>
-              <FieldControl
-                type="email"
-                inputMode="email"
-                defaultValue={email}
-                readOnly
-                tabIndex={-1}
-                placeholder="priya.raman@kellyelec.com.au"
-                autoComplete="email"
-                autoCapitalize="none"
-                spellCheck={false}
-                className="h-12 text-base"
-              />
-              <FieldDescription>
-                The address Dan's link came to
-              </FieldDescription>
-              <FieldError />
-            </Field>
-
-            <Field name="mobile">
-              <FieldLabel>
-                Mobile number
-                <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
-                  Optional
-                </span>
-              </FieldLabel>
-              <FieldControl
-                type="tel"
-                inputMode="tel"
-                placeholder="So the site can reach you"
-                autoComplete="tel"
-                className="h-12 text-base"
-              />
-            </Field>
-
-            <Field name="role">
-              <FieldLabel>
-                Role
-                <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
-                  Optional
-                </span>
-              </FieldLabel>
-              <FieldControl
-                placeholder="Electrician"
-                className="h-12 text-base"
-              />
-            </Field>
+            ))}
           </Fieldset>
 
-          <Banner tone="neutral" className="mt-1">
+          <Fieldset className="mt-4.5">
+            <FieldsetLegend>
+              This job
+              <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
+                Asked again next job
+              </span>
+            </FieldsetLegend>
+
+            <CompanyReadOnly name={company.name} />
+
+            {personFields("visit").map((field) => (
+              <PersonFieldRow
+                key={field.key}
+                field={field}
+                surface="phone"
+                value={person[field.key]}
+                onChange={set(field.key)}
+              />
+            ))}
+          </Fieldset>
+
+          <Banner tone="neutral" className="mt-4.5 mb-2">
             Your details, not your firm's. Next time you confirm them in one
             tap.
           </Banner>
