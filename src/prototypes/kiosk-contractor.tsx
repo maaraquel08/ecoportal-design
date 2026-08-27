@@ -413,8 +413,13 @@ export function KioskContractor({
         return (
           <PhotoScreen
             active={step === index}
+            /* The sign-on numbers its four steps, so the photo is the
+             * last of them. A returning trade only held up a pass, so
+             * there is no count for the label to belong to. */
             step={
-              route === "first-time" ? `${SIGN_ON_TOTAL} of ${SIGN_ON_TOTAL}` : "2 of 3"
+              route === "first-time"
+                ? `${SIGN_ON_TOTAL} of ${SIGN_ON_TOTAL}`
+                : null
             }
             /* Back from the photo is the reader, whichever way she
              * got past it — the code screen is not somewhere to

@@ -87,13 +87,17 @@ function CameraPlaceholder({
 
 export function PhotoScreen({
   active,
-  /** "2 of 3" on the scan path, "3 of 3" when a form came first. */
+  /**
+   * "2 of 3" on the scan path, "3 of 3" when a form came first. `null`
+   * drops the label: a count is worth reading only where the screens
+   * behind it were numbered too.
+   */
   step = "2 of 3",
   onBack,
   onDone,
 }: {
   active: boolean;
-  step?: string;
+  step?: string | null;
   onBack: () => void;
   onDone: () => void;
 }) {
@@ -132,10 +136,16 @@ export function PhotoScreen({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col px-10 pt-3 pb-6">
-      <span className="font-mono text-[13px] tracking-[0.14em] text-lane-fill uppercase">
-        Step {step}
-      </span>
-      <h2 className="mt-1 text-[32px] leading-tight font-bold tracking-[-0.03em]">
+      {step ? (
+        <span className="font-mono text-[13px] tracking-[0.14em] text-lane-fill uppercase">
+          Step {step}
+        </span>
+      ) : null}
+      <h2
+        className={`text-[32px] leading-tight font-bold tracking-[-0.03em] ${
+          step ? "mt-1" : ""
+        }`}
+      >
         Look up for your photo
       </h2>
 

@@ -151,7 +151,6 @@ function NoticesPage({
           {MINE} affect Level 4
         </span>
       }
-      hint="Scroll for the last two"
       next="Next · where you're going"
       onNext={onNext}
     >
