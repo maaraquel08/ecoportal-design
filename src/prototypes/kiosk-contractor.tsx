@@ -228,6 +228,13 @@ export function KioskContractor({
   const [route, setRoute] = React.useState<Route>("unchosen");
   /** The firm she picks, or types. Empty until the company step. */
   const [company, setCompany] = React.useState<Company>(BLANK);
+  /**
+   * The reader has two doors: the question, and the landing's pass
+   * shortcut that skips it. Back has to return through the one she
+   * actually came through — the screen before it on the tape is not
+   * the screen she was looking at.
+   */
+  const [readerDoor, setReaderDoor] = React.useState<"landing" | "who">("who");
   /** Which expected job the find-by-name path is verifying. */
   const [booking, setBooking] = React.useState<Booking>(BOOKINGS[0]);
   /** Her own fields, in the shape the phone's sign-up uses too, so
@@ -307,6 +314,7 @@ export function KioskContractor({
   /** The kiosk resets to whatever it was showing before this trade,
    *  forgetting which door she came through. */
   const reset = () => {
+    setReaderDoor("who");
     setCompany(BLANK);
     setPerson(BLANK_PERSON);
     if (onExit) {
@@ -339,7 +347,10 @@ export function KioskContractor({
         return (
           <KioskLanding
             onWork={() => goTo(index + 1)}
-            onScan={() => goTo(index + 2, "returning")}
+            onScan={() => {
+              setReaderDoor("landing");
+              goTo(index + 2, "returning");
+            }}
           />
         );
       /* One question, two big doors. Everything after it differs. */
@@ -347,7 +358,10 @@ export function KioskContractor({
         return (
           <WhoScreen
             onFirstTime={() => goTo(index + 1, "first-time")}
-            onReturning={() => goTo(index + 1, "returning")}
+            onReturning={() => {
+              setReaderDoor("who");
+              goTo(index + 1, "returning");
+            }}
             onBack={backFrom(index, "unchosen")}
           />
         );
@@ -382,7 +396,13 @@ export function KioskContractor({
         return (
           <ReaderScreen
             active={step === index}
-            onBack={backFrom(index)}
+            /* Straight in off the landing means straight back out to
+             * it, with the doors open again. */
+            onBack={
+              readerDoor === "landing" && !onExit
+                ? () => goTo(indexOf("landing"), "unchosen")
+                : backFrom(index)
+            }
             /* A pass that reads skips the two screens that exist to
              * do without one. */
             onScanned={() => goTo(indexOf("photo"))}
