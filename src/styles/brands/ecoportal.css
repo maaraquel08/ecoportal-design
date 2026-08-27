@@ -1,0 +1,294 @@
+/* ==================================================================
+ * Brand: ecoportal — visitor & contractor sign-in.
+ * Source of truth: "Brand Direction · v2 · palette" (design canvas).
+ *
+ * Four hues, one neutral page. Green is the house, blue is the
+ * visitor lane, orange is the contractor lane, red is the way out.
+ * Each hue is a five-step ramp — tint, soft, base, fill, pressed —
+ * so a bright brand colour can still do quiet interface work.
+ *
+ * The three rules:
+ *   1. One ramp per screen. The lane owns it; nothing else on the
+ *      screen is coloured.
+ *   2. Base shows, fill works. Marks, icons and rails use the pure
+ *      hue; button fills and coloured text step down to fill.
+ *   3. Red is an exit, not a lane. Leaving, blocked and expired only.
+ *
+ * The lane is a single attribute at the root — [data-lane] — which
+ * repoints all five steps. No component knows which lane it is in.
+ * Default (no attribute) is the house ramp: green.
+ *
+ * Activate the brand: <html data-brand="ecoportal">.
+ * Activate a lane:    <html data-brand="ecoportal" data-lane="visitor">
+ *
+ * Selectors are :root-qualified on purpose. A bare [data-brand] block
+ * ties with the default brand's :root on specificity, and Tailwind
+ * hoists every @import to the top of the stylesheet — so the default
+ * would always land later and win. :root[data-brand] outranks it
+ * regardless of import order.
+ * ================================================================== */
+
+:root[data-brand="ecoportal"] {
+  /* -- 1. primitives: neutral ramp (named by lightness) ------------
+   * Warm grey. Structure comes from lines and space, never fills or
+   * shadows — that is what lets a bright hue sit on the page without
+   * shouting. */
+  --n-0: #ffffff;   /* canvas */
+  --n-50: #fafbfa;  /* weak */
+  --n-100: #f2f3f2; /* fill */
+  --n-200: #e6e8e6; /* line — the one hairline */
+  --n-300: #dcdfdc; /* edge — device border, the only heavier line */
+  --n-400: #a2a9a6; /* mute */
+  --n-500: #6b7370; /* quiet */
+  --n-700: #4d5551; /* body */
+  --n-900: #101413; /* ink */
+
+  /* -- 1. primitives: brand hues -----------------------------------
+   * Four ramps, five steps each. Which step does what:
+   *   tint    tinted panels, icon tiles, selected chips
+   *   soft    hairlines and focus rings on tint
+   *   base    the brand mark, logo, icon strokes, rails
+   *   fill    button fills, coloured labels, links
+   *   pressed pressed state, text on a tint panel */
+
+  /* house · brand, idle, portal */
+  --eco-green-tint: #ecfdf0;
+  --eco-green-soft: #d2f9dc;
+  --eco-green-base: #2D6F3F;
+  --eco-green-fill: #296439;
+  --eco-green-pressed: #0e3f19;
+
+  /* visitor · guest check-in */
+  --eco-blue-tint: #eef4ff;
+  --eco-blue-soft: #dbe7ff;
+  --eco-blue-base: #4e86ff;
+  --eco-blue-fill: #234eb4;
+  --eco-blue-pressed: #132858;
+
+  /* contractor · induction, permits */
+  --eco-orange-tint: #fff6e8;
+  --eco-orange-soft: #ffe9cb;
+  --eco-orange-base: #f38c05;
+  --eco-orange-fill: #a85a0b;
+  --eco-orange-pressed: #522c09;
+
+  /* exit · sign-out, stop, expired */
+  --eco-red-tint: #fff0f0;
+  --eco-red-soft: #ffd9d9;
+  --eco-red-base: #ff4e4e;
+  --eco-red-fill: #c42222;
+  --eco-red-pressed: #5e1414;
+
+  /* notice · amber. Sits close to the contractor ramp on purpose:
+   * it is only ever a notice card, never a control. */
+  --eco-notice-tint: #fdf3e0;
+  --eco-notice-base: #a9700a;
+  --eco-notice-fg: #7d5307;
+  --eco-notice-ink: #5c3d05; /* notice headline on a notice panel */
+
+  /* The active lane. [data-lane] below repoints these five and
+   * nothing else; the house ramp is the default. */
+  --eco-lane-tint: var(--eco-green-tint);
+  --eco-lane-soft: var(--eco-green-soft);
+  --eco-lane-base: var(--eco-green-base);
+  --eco-lane-fill: var(--eco-green-fill);
+  --eco-lane-pressed: var(--eco-green-pressed);
+
+  /* -- 2. surfaces & text ------------------------------------------
+   * White page, white cards, one hairline. */
+  --bg: var(--n-0);
+  --surface: var(--n-50);
+  --surface-raised: var(--n-0);
+  --fg: var(--n-900);
+  --fg-muted: var(--n-700);
+  --fg-subtle: var(--n-500);
+  --line: var(--n-200);
+  --line-strong: var(--n-300);
+
+  /* -- 3. interactive -----------------------------------------------
+   * accent is the lane at base — the recognisable brand hue — and it
+   * carries white. The canvas reserved base for marks and stepped
+   * buttons down to fill for kiosk-distance contrast; this product is
+   * phone-first and holds the CTA at base, pressing down to fill.
+   * highlight stays base with dark ink for emphasis that is not an
+   * action. */
+  --accent: var(--eco-lane-base);
+  --accent-hover: var(--eco-lane-fill);
+  --accent-fg: var(--n-0);
+  /* Active text input: the field's own container fills with the lane
+   * tint while it is focused. Labels are untouched. */
+  --accent-tint: var(--eco-lane-tint);
+  --highlight: var(--eco-lane-base);
+  --highlight-fg: var(--n-900);
+  --ring: var(--eco-lane-fill);
+
+  /* -- 4. status ----------------------------------------------------
+   * Shared by all lanes, so these are pinned to fixed hues rather
+   * than the lane: success = cleared (green fill), danger = blocked
+   * and the Leaving route (red fill), info = the visitor ramp. */
+  --success: var(--eco-green-fill);
+  --danger: var(--eco-red-fill);
+  --danger-fg: var(--n-0);
+  /* Invalid field: red base draws the edge and the alert badge, red
+   * tint fills the control. Text and labels stay at danger (fill). */
+  --danger-line: var(--eco-red-base);
+  --danger-tint: var(--eco-red-tint);
+  /* Same edge + tint pair for the other two status roles, so a status
+   * surface can be drawn without naming a hue. */
+  --success-line: var(--eco-green-soft);
+  --success-tint: var(--eco-green-tint);
+  --info-line: var(--eco-blue-soft);
+  --info-tint: var(--eco-blue-tint);
+  --info: var(--eco-blue-fill);
+
+  /* -- 5. shape & type ---------------------------------------------
+   * Drawn radii from the surface study: 8 control, 12 tile,
+   * 18 card, 24 frame. Two faces only — Geist for every human
+   * sentence, Geist Mono for machine facts (step counters, times,
+   * reference codes, permit numbers). */
+  --brand-radius-sm: 0.5rem;
+  --brand-radius-md: 0.75rem;
+  --brand-radius-lg: 1.125rem;
+  --brand-radius-xl: 1.5rem;
+  --brand-font-sans: "Geist", "Helvetica Neue", Arial, ui-sans-serif, sans-serif;
+  --brand-font-mono: "Geist Mono", ui-monospace, monospace;
+
+  /* Everything is drawn, nothing floats — no shadows anywhere. Every
+   * popup already draws its own `border-line` hairline, so an overlay
+   * ring here would stack a second edge outside that border. Both
+   * slots stay off; the border is the separation. */
+  --brand-shadow-raised: none;
+  --brand-shadow-overlay: none;
+}
+
+/* -- Lanes: repoint the five steps, nothing else ------------------- */
+
+:root[data-brand="ecoportal"][data-lane="house"] {
+  --eco-lane-tint: var(--eco-green-tint);
+  --eco-lane-soft: var(--eco-green-soft);
+  --eco-lane-base: var(--eco-green-base);
+  --eco-lane-fill: var(--eco-green-fill);
+  --eco-lane-pressed: var(--eco-green-pressed);
+}
+
+:root[data-brand="ecoportal"][data-lane="visitor"] {
+  --eco-lane-tint: var(--eco-blue-tint);
+  --eco-lane-soft: var(--eco-blue-soft);
+  --eco-lane-base: var(--eco-blue-base);
+  --eco-lane-fill: var(--eco-blue-fill);
+  --eco-lane-pressed: var(--eco-blue-pressed);
+}
+
+:root[data-brand="ecoportal"][data-lane="contractor"] {
+  --eco-lane-tint: var(--eco-orange-tint);
+  --eco-lane-soft: var(--eco-orange-soft);
+  --eco-lane-base: var(--eco-orange-base);
+  --eco-lane-fill: var(--eco-orange-fill);
+  --eco-lane-pressed: var(--eco-orange-pressed);
+}
+
+/* Not a lane — a terminal state, shared by both flows. */
+:root[data-brand="ecoportal"][data-lane="exit"] {
+  --eco-lane-tint: var(--eco-red-tint);
+  --eco-lane-soft: var(--eco-red-soft);
+  --eco-lane-base: var(--eco-red-base);
+  --eco-lane-fill: var(--eco-red-fill);
+  --eco-lane-pressed: var(--eco-red-pressed);
+}
+
+/* Dark: paper flips to near-black and the neutral ramp reverses by
+ * role. The hues lift so they still read on near-black, and the ramp
+ * collapses — base and fill become the same lifted hue, because on a
+ * dark page the bright hue is the legible one and it carries ink
+ * rather than white. Only tokens that change are listed. */
+:root[data-brand="ecoportal"].dark {
+  /* -- 1. primitives: neutral ramp --------------------------------- */
+  --n-0: #0f1211;   /* canvas — near-black, never pure black */
+  --n-50: #171b1a;  /* weak */
+  --n-100: #1e2322; /* fill */
+  --n-200: #2a302e; /* line */
+  --n-300: #3a4240; /* edge */
+  --n-400: #6b7370; /* mute */
+  --n-500: #8b9490; /* quiet */
+  --n-700: #b9c0bd; /* body */
+  --n-900: #f2f4f3; /* ink */
+
+  /* -- 1. primitives: brand hues ----------------------------------- */
+  --eco-green-tint: #0d2716;
+  --eco-green-soft: #1a4a2b;
+  --eco-green-base: #2D6F3F;
+  --eco-green-fill: #4ade7a;
+  --eco-green-pressed: #34b862;
+
+  --eco-blue-tint: #10203f;
+  --eco-blue-soft: #1e3a6e;
+  --eco-blue-base: #7aa5ff;
+  --eco-blue-fill: #7aa5ff;
+  --eco-blue-pressed: #5b8af0;
+
+  --eco-orange-tint: #2b1c07;
+  --eco-orange-soft: #58380c;
+  --eco-orange-base: #ffab3d;
+  --eco-orange-fill: #ffab3d;
+  --eco-orange-pressed: #e08b1f;
+
+  --eco-red-tint: #2e1212;
+  --eco-red-soft: #5c2222;
+  --eco-red-base: #ff7a7a;
+  --eco-red-fill: #ff7a7a;
+  --eco-red-pressed: #e85c5c;
+
+  --eco-notice-tint: #2e2208;
+  --eco-notice-base: #f0b23c;
+  --eco-notice-fg: #f5cf85;
+  --eco-notice-ink: #fbe4b8;
+
+  /* -- 2–4. semantic overrides ------------------------------------- */
+  --surface-raised: var(--n-100); /* cards lift off the canvas */
+  /* base and fill collapse in dark, so press to the dimmer step. */
+  --accent-hover: var(--eco-lane-pressed);
+  --accent-fg: var(--n-0);        /* lifted hue takes dark ink */
+  --danger-fg: var(--n-0);
+  --highlight-fg: var(--n-0);
+  --success: var(--eco-green-base);
+  --danger: var(--eco-red-base);
+  --info: var(--eco-blue-base);
+}
+
+/* Lane and notice steps as Tailwind utilities (bg-lane-tint,
+ * text-lane-pressed, border-lane-soft, …). Additive to the sc1m
+ * theme contract — the semantic names above are untouched. */
+@theme inline {
+  --color-lane-tint: var(--eco-lane-tint);
+  --color-lane-soft: var(--eco-lane-soft);
+  --color-lane-base: var(--eco-lane-base);
+  --color-lane-fill: var(--eco-lane-fill);
+  --color-lane-pressed: var(--eco-lane-pressed);
+  /* Both fall back for brands that define no tint step. */
+  --color-accent-tint: var(--accent-tint, var(--surface));
+  --color-danger-tint: var(--danger-tint, var(--surface));
+  --color-danger-line: var(--danger-line, var(--danger));
+  --color-success-tint: var(--success-tint, var(--surface));
+  --color-success-line: var(--success-line, var(--success));
+  --color-info-tint: var(--info-tint, var(--surface));
+  --color-info-line: var(--info-line, var(--info));
+  /* The four ramps by lane name, for the one screen that is allowed
+   * to show them together: the kiosk landing, where a person picks
+   * which lane they are in. Everywhere else, use the lane-* tokens. */
+  --color-house-tint: var(--eco-green-tint);
+  --color-house-base: var(--eco-green-base);
+  --color-house-fill: var(--eco-green-fill);
+  --color-visitor-tint: var(--eco-blue-tint);
+  --color-visitor-base: var(--eco-blue-base);
+  --color-visitor-fill: var(--eco-blue-fill);
+  --color-contractor-tint: var(--eco-orange-tint);
+  --color-contractor-base: var(--eco-orange-base);
+  --color-contractor-fill: var(--eco-orange-fill);
+  --color-exit-tint: var(--eco-red-tint);
+  --color-exit-base: var(--eco-red-base);
+  --color-exit-fill: var(--eco-red-fill);
+  --color-notice: var(--eco-notice-base);
+  --color-notice-tint: var(--eco-notice-tint);
+  --color-notice-fg: var(--eco-notice-fg);
+  --color-notice-ink: var(--eco-notice-ink);
+}

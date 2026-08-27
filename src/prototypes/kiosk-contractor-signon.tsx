@@ -1,0 +1,1019 @@
+import * as React from "react";
+import { BackButton } from "@/components/back-button";
+import { QrMock } from "@/components/qr-mock";
+import { TabletColumn } from "@/components/tablet-frame";
+import { Banner } from "@/components/ui/banner";
+import { Button } from "@/components/ui/button";
+import {
+  Field,
+  FieldControl,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+import { Form } from "@/components/ui/form";
+import {
+  NumberField,
+  NumberFieldGroup,
+  NumberFieldInput,
+} from "@/components/ui/number-field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { EMAIL_RE, required } from "@/lib/form";
+import {
+  PASS_MARK,
+  QUESTIONS,
+  RESPONSIBILITIES,
+  useBriefing,
+} from "@/prototypes/contractor-briefing";
+import {
+  BLANK,
+  COUNTRIES,
+  INDUSTRIES,
+  REGISTERED,
+  type Company,
+} from "@/prototypes/contractor-firms";
+import { HOSTS } from "@/prototypes/hosts";
+import { StepHeader, Stepper } from "@/prototypes/kiosk-chrome";
+import { Card, Tile } from "@/prototypes/kiosk-landing";
+import { PersonIcon, QrIcon, ToolboxIcon } from "@/prototypes/kiosk-icons";
+import { useShakeInvalid } from "@/prototypes/use-shake-invalid";
+
+/**
+ * Signing a trade on at the glass, with nothing done beforehand.
+ *
+ * The same three things the pre-arrival flow asks for — the firm, her
+ * own details, the briefing — in the same order, because a person who
+ * did it on her phone last night and a person doing it in the lobby
+ * should be able to describe the same journey. What changes is the
+ * surface: two columns instead of one, and the briefing can be handed
+ * to her own phone so she is not standing at the tablet reading five
+ * paragraphs with a tool bag on her shoulder.
+ */
+
+/** Company, details, briefing, photo. The photo belongs to the kiosk. */
+export const SIGN_ON_TOTAL = 4;
+
+/* -- W2 · which one are you ----------------------------------------- */
+
+export function WhoScreen({
+  onFirstTime,
+  onReturning,
+  onBack,
+}: {
+  onFirstTime: () => void;
+  onReturning: () => void;
+  onBack: () => void;
+}) {
+  return (
+    <TabletColumn>
+      <BackButton onClick={onBack} />
+
+      <span className="mt-5 font-mono text-[13px] tracking-[0.14em] text-lane-fill uppercase">
+        Here to work
+      </span>
+      <h2 className="mt-2.5 text-[40px] leading-[1.06] font-bold tracking-[-0.035em]">
+        Have you worked with us before?
+      </h2>
+      <p className="mt-2 text-[17px] text-fg-muted">
+        It only changes what we need from you now.
+      </p>
+
+      <div className="mt-6.5 flex min-h-0 flex-1 gap-4.5">
+        <Card className="flex min-w-0 flex-1 flex-col p-5.5">
+          <Tile className="bg-lane-tint text-lane-base">
+            <ToolboxIcon />
+          </Tile>
+          <div className="mt-5 text-[27px] font-semibold tracking-[-0.025em]">
+            First time here
+          </div>
+          <p className="mt-2.5 text-base leading-normal text-fg-subtle">
+            Your firm, your details and the safety briefing. About four
+            minutes, and only ever once — the next site starts at the reader.
+          </p>
+          <Button size="cta" className="mt-auto w-full text-lg" onClick={onFirstTime}>
+            Start · about 4 minutes
+          </Button>
+        </Card>
+
+        <Card className="flex min-w-0 flex-1 flex-col p-5.5">
+          <Tile className="bg-lane-tint text-lane-base">
+            <QrIcon />
+          </Tile>
+          <div className="mt-5 text-[27px] font-semibold tracking-[-0.025em]">
+            I've been here before
+          </div>
+          <p className="mt-2.5 text-base leading-normal text-fg-subtle">
+            Hold the code from your clearance email to the reader, or let the
+            desk look you up. About ten seconds.
+          </p>
+          <Button
+            size="cta"
+            variant="outline"
+            className="mt-auto w-full text-lg"
+            onClick={onReturning}
+          >
+            Hold my code
+          </Button>
+        </Card>
+      </div>
+    </TabletColumn>
+  );
+}
+
+/* -- W3 · your company · 1 of 4 ------------------------------------- */
+
+/** What she picks when the building has never heard of her firm. */
+const NOT_LISTED = "My firm isn't listed";
+
+const FIRM_ITEMS = [...REGISTERED.map((firm) => firm.name), NOT_LISTED];
+
+export function FirmScreen({
+  company,
+  onChange,
+  onContinue,
+  onBack,
+}: {
+  company: Company;
+  onChange: (next: Company) => void;
+  onContinue: () => void;
+  onBack: () => void;
+}) {
+  const { scopeRef, shake } = useShakeInvalid<HTMLFormElement>();
+  /** A firm already registered with the building answers all eight. */
+  const [known, setKnown] = React.useState(false);
+  const [manual, setManual] = React.useState(false);
+  const [unchosen, setUnchosen] = React.useState(false);
+  /** What the firm field is showing. One of the items, or nothing. */
+  const [picked, setPicked] = React.useState<string | null>(null);
+
+  const set = (key: keyof Company) => (value: string) =>
+    onChange({ ...company, [key]: value });
+
+  /* R2, at the glass: eight fields that are identical for every
+   * colleague she has are looked up once, not typed in a lobby. */
+  const choose = (name: string | null) => {
+    setUnchosen(false);
+    setPicked(name);
+    if (name === null) {
+      setManual(false);
+      setKnown(false);
+      onChange(BLANK);
+      return;
+    }
+    if (name === NOT_LISTED) {
+      setManual(true);
+      setKnown(false);
+      onChange(BLANK);
+      return;
+    }
+    const match = REGISTERED.find((item) => item.name === name);
+    if (!match) return;
+    setManual(false);
+    setKnown(true);
+    onChange(match);
+  };
+
+  const locked = { readOnly: known, tabIndex: known ? -1 : undefined };
+
+  return (
+    <Form
+      ref={scopeRef}
+      className="flex min-h-0 flex-1 flex-col gap-0 px-10 pt-4 pb-6"
+      onFormSubmit={() => {
+        if (!known && !manual) {
+          setUnchosen(true);
+          return;
+        }
+        if (
+          !company.name.trim() ||
+          !company.address.trim() ||
+          !company.postcode.trim() ||
+          !company.suburb.trim() ||
+          !company.city.trim()
+        ) {
+          return;
+        }
+        onContinue();
+      }}
+    >
+      <StepHeader
+        label="Your company"
+        active={1}
+        total={SIGN_ON_TOTAL}
+        onBack={onBack}
+      />
+
+      <h2 className="mt-3 text-[34px] leading-[1.08] font-bold tracking-[-0.03em]">
+        Who do you work for?
+      </h2>
+
+      {/* The negative margin gives focus rings their two pixels back:
+        * a scroll box clips them on both axes, and this grid scrolls
+        * when a firm is typed in by hand. */}
+      <div className="mt-3.5 -mx-1 grid min-h-0 flex-1 grid-cols-6 content-start gap-x-6 gap-y-3 overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* The same control the visitor's host field uses: type to
+          * narrow, pick from the popover. A registered firm answers
+          * the eight fields below it. */}
+        <Field name="firm" className="col-span-6" invalid={unchosen}>
+          <FieldLabel>Your firm</FieldLabel>
+          <Combobox
+            items={FIRM_ITEMS}
+            value={picked}
+            onValueChange={(value) => choose(value)}
+          >
+            <ComboboxInput
+              placeholder="Start typing your firm's name"
+              className="h-12 text-base"
+            />
+            <ComboboxContent>
+              <ComboboxEmpty>
+                No firm by that name — pick "{NOT_LISTED}".
+              </ComboboxEmpty>
+              <ComboboxList>
+                {(name: string) => (
+                  <ComboboxItem key={name} value={name}>
+                    {name}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
+          <FieldDescription>
+            If the building has your firm on file, the rest fills itself in
+          </FieldDescription>
+          <FieldError match={unchosen}>
+            Pick your firm, or "{NOT_LISTED}" to type it in
+          </FieldError>
+        </Field>
+
+        {manual ? (
+          <Field
+            name="companyName"
+            className="col-span-6"
+            validationMode="onSubmit"
+            validate={required("Enter your firm's name")}
+          >
+            <FieldLabel>Company name, as your firm files it</FieldLabel>
+            <FieldControl
+              value={company.name}
+              onChange={(event) => set("name")(event.target.value)}
+              placeholder="Your firm's registered name"
+              className="h-12 text-base"
+            />
+            <FieldError />
+          </Field>
+        ) : null}
+
+        <Field
+          name="address"
+          className="col-span-3"
+          validationMode="onSubmit"
+          validate={required("Enter the street address")}
+        >
+          <FieldLabel>Street address</FieldLabel>
+          <FieldControl
+            value={company.address}
+            onChange={(event) => set("address")(event.target.value)}
+            placeholder="14 Bourke Road"
+            className="h-12 text-base"
+            {...locked}
+          />
+          <FieldError />
+        </Field>
+
+        <Field
+          name="postcode"
+          className="col-span-1"
+          validationMode="onSubmit"
+          validate={required("Postcode")}
+        >
+          <FieldLabel>Postcode</FieldLabel>
+          <FieldControl
+            value={company.postcode}
+            onChange={(event) => set("postcode")(event.target.value)}
+            inputMode="numeric"
+            placeholder="2015"
+            className="h-12 text-base"
+            {...locked}
+          />
+          <FieldError />
+        </Field>
+
+        <Field
+          name="suburb"
+          className="col-span-2"
+          validationMode="onSubmit"
+          validate={required("Suburb")}
+        >
+          <FieldLabel>Suburb</FieldLabel>
+          <FieldControl
+            value={company.suburb}
+            onChange={(event) => set("suburb")(event.target.value)}
+            placeholder="Alexandria"
+            className="h-12 text-base"
+            {...locked}
+          />
+          <FieldError />
+        </Field>
+
+        <Field
+          name="city"
+          className="col-span-2"
+          validationMode="onSubmit"
+          validate={required("City")}
+        >
+          <FieldLabel>City</FieldLabel>
+          <FieldControl
+            value={company.city}
+            onChange={(event) => set("city")(event.target.value)}
+            placeholder="Sydney"
+            className="h-12 text-base"
+            {...locked}
+          />
+          <FieldError />
+        </Field>
+
+        <Field name="country" className="col-span-2">
+          <FieldLabel>Country</FieldLabel>
+          <Select
+            value={company.country}
+            onValueChange={(value) => set("country")(String(value ?? ""))}
+            readOnly={known}
+          >
+            <SelectTrigger
+              className="h-12 w-full text-base"
+              tabIndex={known ? -1 : undefined}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COUNTRIES.map((country) => (
+                <SelectItem key={country} value={country}>
+                  {country}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field name="industry" className="col-span-2">
+          <FieldLabel>
+            Industry
+            <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
+              Optional
+            </span>
+          </FieldLabel>
+          <Select
+            value={company.industry || null}
+            onValueChange={(value) => set("industry")(String(value ?? ""))}
+            readOnly={known}
+          >
+            <SelectTrigger
+              className="h-12 w-full text-base"
+              tabIndex={known ? -1 : undefined}
+            >
+              <SelectValue placeholder="Pick one" />
+            </SelectTrigger>
+            <SelectContent>
+              {INDUSTRIES.map((industry) => (
+                <SelectItem key={industry} value={industry}>
+                  {industry}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field name="employees" className="col-span-2">
+          <FieldLabel>
+            People at the firm
+            <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
+              Optional
+            </span>
+          </FieldLabel>
+          <NumberField
+            value={company.employees ? Number(company.employees) : null}
+            onValueChange={(value) =>
+              set("employees")(value === null ? "" : String(value))
+            }
+            min={1}
+            readOnly={known}
+          >
+            <NumberFieldGroup tabIndex={known ? -1 : undefined}>
+              <NumberFieldInput className="h-12 text-base" />
+            </NumberFieldGroup>
+          </NumberField>
+        </Field>
+      </div>
+
+      <Separator className="mt-4" />
+
+      <div className="mt-4 flex flex-none items-center justify-between gap-6">
+        <span className="font-mono text-[13px] text-fg-subtle">
+          {known
+            ? "Filed by your firm · nobody edits it from a lobby"
+            : "Asked once, for the whole firm"}
+        </span>
+        <div className="flex flex-none items-center gap-3">
+          <Button variant="outline" size="cta" type="button" onClick={onBack}>
+            Back
+          </Button>
+          <Button size="cta" type="submit" onClick={shake}>
+            Continue
+          </Button>
+        </div>
+      </div>
+    </Form>
+  );
+}
+
+/* -- W4 · your details · 2 of 4 ------------------------------------- */
+
+export function TradeDetailsScreen({
+  company,
+  onContinue,
+  onBack,
+}: {
+  /** Settled on the previous step, so it is shown rather than asked. */
+  company: Company;
+  onContinue: (firstName: string) => void;
+  onBack: () => void;
+}) {
+  const { scopeRef, shake } = useShakeInvalid<HTMLFormElement>();
+  const [host, setHost] = React.useState<string | null>(null);
+
+  return (
+    <Form
+      ref={scopeRef}
+      className="flex min-h-0 flex-1 flex-col gap-0 px-10 pt-4 pb-6"
+      onFormSubmit={(values) => {
+        const first = String(values.first ?? "").trim();
+        const last = String(values.last ?? "").trim();
+        const email = String(values.email ?? "").trim();
+        if (!first || !last || !EMAIL_RE.test(email)) return;
+        onContinue(first);
+      }}
+    >
+      <StepHeader
+        label="Your details"
+        active={2}
+        total={SIGN_ON_TOTAL}
+        onBack={onBack}
+      />
+
+      <h2 className="mt-3 text-[34px] leading-[1.08] font-bold tracking-[-0.03em]">
+        And who are you?
+      </h2>
+      <p className="mt-2 max-w-[64ch] text-[17px] text-fg-muted">
+        Three required, three if you want them. Your firm is already answered
+        — nothing from the last screen is asked twice.
+      </p>
+
+      <div className="mt-4 -mx-1 grid min-h-0 flex-1 grid-cols-2 content-start gap-x-7.5 gap-y-3.5 px-1">
+        <Field
+          name="first"
+          validationMode="onSubmit"
+          validate={required("Enter your first name")}
+        >
+          <FieldLabel>First name</FieldLabel>
+          <FieldControl
+            placeholder="Priya"
+            autoComplete="given-name"
+            autoCapitalize="words"
+            className="h-12 text-base"
+          />
+          <FieldError />
+        </Field>
+
+        <Field
+          name="last"
+          validationMode="onSubmit"
+          validate={required("Enter your last name")}
+        >
+          <FieldLabel>Last name</FieldLabel>
+          <FieldControl
+            placeholder="Raman"
+            autoComplete="family-name"
+            autoCapitalize="words"
+            className="h-12 text-base"
+          />
+          <FieldError />
+        </Field>
+
+        <Field
+          name="email"
+          validationMode="onSubmit"
+          validate={(value) => {
+            const email = String(value ?? "").trim();
+            if (!email) return "Enter your email — your pass is sent here";
+            if (!EMAIL_RE.test(email))
+              return "That email doesn't look right — check for a typo";
+            return null;
+          }}
+        >
+          <FieldLabel>Email</FieldLabel>
+          <FieldControl
+            type="email"
+            inputMode="email"
+            placeholder="priya.raman@kellyelec.com.au"
+            autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            className="h-12 text-base"
+          />
+          <FieldDescription>
+            Next time your clearance arrives here instead
+          </FieldDescription>
+          <FieldError />
+        </Field>
+
+        <Field name="mobile">
+          <FieldLabel>
+            Mobile number
+            <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
+              Optional
+            </span>
+          </FieldLabel>
+          <FieldControl
+            type="tel"
+            inputMode="tel"
+            placeholder="So the site can reach you"
+            autoComplete="tel"
+            className="h-12 text-base"
+          />
+        </Field>
+
+        {/* Carried through from the firm step. It is on the brief's
+          * check-in list, so it is shown — but a value the building
+          * already holds is never re-typed in a lobby. */}
+        <Field name="company">
+          <FieldLabel>Company</FieldLabel>
+          <FieldControl
+            value={company.name}
+            readOnly
+            tabIndex={-1}
+            className="h-12 text-base"
+          />
+          <FieldDescription>Answered on the last screen</FieldDescription>
+        </Field>
+
+        <Field name="host">
+          <FieldLabel>
+            Who are you here to see?
+            <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
+              Optional
+            </span>
+          </FieldLabel>
+          <Combobox items={HOSTS} value={host} onValueChange={setHost}>
+            <ComboboxInput
+              placeholder="Start typing a name"
+              className="h-12 text-base"
+            />
+            <ComboboxContent>
+              <ComboboxEmpty>Nobody by that name.</ComboboxEmpty>
+              <ComboboxList>
+                {(name: string) => (
+                  <ComboboxItem key={name} value={name}>
+                    {name}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
+        </Field>
+
+        <Field name="reason" className="col-span-2">
+          <FieldLabel>
+            Reason for the visit
+            <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
+              Optional
+            </span>
+          </FieldLabel>
+          <FieldControl
+            placeholder="Level 4 lighting rough-in"
+            className="h-12 text-base"
+          />
+        </Field>
+      </div>
+
+      <Separator className="mt-4" />
+
+      <div className="mt-4 flex flex-none items-center justify-between gap-6">
+        <span className="font-mono text-[13px] text-fg-subtle">
+          Yours, not your firm's · asked once ever
+        </span>
+        <div className="flex flex-none items-center gap-3">
+          <Button variant="outline" size="cta" type="button" onClick={onBack}>
+            Back
+          </Button>
+          <Button size="cta" type="submit" onClick={shake}>
+            Continue
+          </Button>
+        </div>
+      </div>
+    </Form>
+  );
+}
+
+/* -- W5 · the briefing · 3 of 4 ------------------------------------- */
+
+/**
+ * The one step that does not have to happen on the glass.
+ *
+ * Five paragraphs and five questions is a long time to stand in a
+ * lobby holding a tool bag, and she has a screen in her pocket that is
+ * better for reading. So the kiosk offers the choice and then waits —
+ * it is the same briefing either way, and the record is the same
+ * record.
+ */
+type Where = "choose" | "phone" | "reading" | "asking" | "result";
+
+/** Roughly how long the phone takes to report each answer back. */
+const PHONE_TICK_MS = 900;
+
+function BriefingFooter({
+  hint,
+  children,
+}: {
+  hint: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <Separator className="mt-4" />
+      <div className="mt-4 flex flex-none items-center justify-between gap-6">
+        <span className="font-mono text-[13px] text-fg-subtle">{hint}</span>
+        <div className="flex flex-none items-center gap-3">{children}</div>
+      </div>
+    </>
+  );
+}
+
+export function BriefingScreen({
+  active,
+  onContinue,
+  onBack,
+}: {
+  active: boolean;
+  onContinue: () => void;
+  onBack: () => void;
+}) {
+  const [where, setWhere] = React.useState<Where>("choose");
+  const quiz = useBriefing();
+  const { deck, index, question, picked, score, atLast, answer } = quiz;
+
+  /* The phone reports back as she answers. Nothing here is faked that
+   * the tablet would not genuinely know: it is told how many of the
+   * five have come in, and nothing about which. */
+  const [reported, setReported] = React.useState(0);
+  React.useEffect(() => {
+    if (!active || where !== "phone" || reported === QUESTIONS.length) return;
+    const timer = window.setTimeout(
+      () => setReported((n) => n + 1),
+      PHONE_TICK_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [active, where, reported]);
+
+  const onPhone = reported === QUESTIONS.length;
+  /* Duplicated into data-text for the shimmer's ::before layer. */
+  const waiting = `Waiting on your phone · ${reported} of ${QUESTIONS.length} answered`;
+
+  const next = () => {
+    if (quiz.next()) setWhere("result");
+  };
+
+  const retake = () => {
+    quiz.retake();
+    setWhere("reading");
+  };
+
+  const header = (
+    <StepHeader
+      label="The briefing"
+      active={3}
+      total={SIGN_ON_TOTAL}
+      onBack={onBack}
+    />
+  );
+
+  /* -- where do you want to do it -- */
+  if (where === "choose") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col px-10 pt-4 pb-6">
+        {header}
+
+        <h2 className="mt-3 text-[34px] leading-[1.08] font-bold tracking-[-0.03em]">
+          Where do you want to do the briefing?
+        </h2>
+        <p className="mt-2 max-w-[64ch] text-[17px] text-fg-muted">
+          Five points to read and {QUESTIONS.length} questions about them.{" "}
+          {PASS_MARK} of {QUESTIONS.length} to pass, no time limit, and it is
+          the same briefing either way.
+        </p>
+
+        <div className="mt-6 flex min-h-0 flex-1 gap-4.5">
+          <Card className="flex min-w-0 flex-1 flex-col p-5.5">
+            <Tile className="bg-lane-tint text-lane-base">
+              <QrIcon />
+            </Tile>
+            <div className="mt-5 text-[27px] font-semibold tracking-[-0.025em]">
+              On your own phone
+            </div>
+            <p className="mt-2.5 text-base leading-normal text-fg-subtle">
+              Scan the code and read it sitting down, in your own time. The
+              tablet waits here and picks up when you are done.
+            </p>
+            <Button
+              size="cta"
+              className="mt-auto w-full text-lg"
+              onClick={() => setWhere("phone")}
+            >
+              Scan the code
+            </Button>
+          </Card>
+
+          <Card className="flex min-w-0 flex-1 flex-col p-5.5">
+            <Tile className="bg-lane-tint text-lane-base">
+              <PersonIcon />
+            </Tile>
+            <div className="mt-5 text-[27px] font-semibold tracking-[-0.025em]">
+              Here on the tablet
+            </div>
+            <p className="mt-2.5 text-base leading-normal text-fg-subtle">
+              Read it on the glass and answer standing up. About three minutes
+              if you are quick.
+            </p>
+            <Button
+              size="cta"
+              variant="outline"
+              className="mt-auto w-full text-lg"
+              onClick={() => setWhere("reading")}
+            >
+              Start here
+            </Button>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  /* -- handed to her phone -- */
+  if (where === "phone") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col px-10 pt-4 pb-6">
+        {header}
+
+        <div className="mt-4 flex min-h-0 flex-1 items-center gap-12">
+          <div className="flex size-84 flex-none items-center justify-center rounded-[32px] bg-lane-tint">
+            <span className="flex items-center justify-center rounded-[20px] bg-surface-raised p-4">
+              <QrMock size={228} />
+            </span>
+          </div>
+
+          <div className="flex min-w-0 flex-1 flex-col">
+            <h2 className="text-[34px] leading-[1.08] font-bold tracking-[-0.03em]">
+              {onPhone
+                ? "That's the briefing done"
+                : "Scan this and carry on there"}
+            </h2>
+            <p className="mt-2.5 max-w-[40ch] text-[17px] leading-normal text-fg-muted">
+              {onPhone
+                ? "Recorded against your name and today's version of the content. One photo to go."
+                : "Point your camera at the code. The five points and the questions open on your phone — this screen keeps your place."}
+            </p>
+
+            {/* transitions.dev · 15 · Shimmer text. The status is
+              * genuinely in progress, so it should not sit there
+              * looking like a finished sentence. */}
+            <div className="mt-5 flex items-center gap-2.5">
+              <span
+                className={`size-2.5 flex-none rounded-full ${
+                  onPhone ? "bg-success" : "bg-lane-base"
+                }`}
+              />
+              {onPhone ? (
+                <span className="font-mono text-[13px] tracking-[0.14em] text-success uppercase">
+                  Passed · {QUESTIONS.length} of {QUESTIONS.length} answered
+                </span>
+              ) : (
+                <span
+                  className="t-shimmer font-mono text-[13px] tracking-[0.14em] uppercase"
+                  data-text={waiting}
+                >
+                  {waiting}
+                </span>
+              )}
+            </div>
+
+            {/* One bar per question, filling as her phone reports in. */}
+            <Stepper
+              active={reported}
+              total={QUESTIONS.length}
+              className="mt-4 max-w-[40ch]"
+            />
+
+            <Banner tone={onPhone ? "success" : "neutral"} className="mt-5">
+              {onPhone
+                ? "Nothing else to read here. The record is the same record."
+                : "Changed your mind? You can do it on the glass instead — nothing is lost."}
+            </Banner>
+          </div>
+        </div>
+
+        <BriefingFooter
+          hint={
+            onPhone
+              ? "Reported by your phone"
+              : "The tablet is not counting down · take your time"
+          }
+        >
+          <Button
+            variant="outline"
+            size="cta"
+            onClick={() => {
+              setReported(0);
+              setWhere("reading");
+            }}
+          >
+            Do it here instead
+          </Button>
+          <Button size="cta" disabled={!onPhone} onClick={onContinue}>
+            Continue
+          </Button>
+        </BriefingFooter>
+      </div>
+    );
+  }
+
+  /* -- the five points, on the glass -- */
+  if (where === "reading") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col px-10 pt-4 pb-6">
+        {header}
+
+        <h2 className="mt-3 text-[27px] leading-[1.14] font-bold tracking-[-0.028em]">
+          I understand that I am responsible for protecting electronic
+          information as follows
+        </h2>
+
+        {/* Two columns: five paragraphs down one side of a 1064-wide
+          * screen would run to the floor. */}
+        <ol className="mt-4 grid min-h-0 flex-1 grid-cols-2 content-start gap-x-7.5 gap-y-3 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {RESPONSIBILITIES.map((item, i) => (
+            <li
+              key={item}
+              className="flex gap-3.5 rounded-[16px] border border-line px-4.5 py-3.5"
+            >
+              <span className="font-mono text-[15px] text-lane-fill">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="text-[15px] leading-normal text-fg-muted">
+                {item}
+              </span>
+            </li>
+          ))}
+        </ol>
+
+        <BriefingFooter
+          hint={`${PASS_MARK} of ${QUESTIONS.length} to pass · no time limit`}
+        >
+          <Button
+            variant="outline"
+            size="cta"
+            onClick={() => setWhere("choose")}
+          >
+            Use my phone
+          </Button>
+          <Button size="cta" onClick={() => setWhere("asking")}>
+            Start · {QUESTIONS.length} questions
+          </Button>
+        </BriefingFooter>
+      </div>
+    );
+  }
+
+  /* -- how did she do -- */
+  if (where === "result") {
+    const { passed } = quiz;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col px-10 pt-4 pb-6">
+        {header}
+
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center">
+          <span
+            className={`font-mono text-[88px] leading-none font-bold ${
+              passed ? "text-success" : "text-danger"
+            }`}
+          >
+            {score}
+            <span className="text-fg-subtle">/{QUESTIONS.length}</span>
+          </span>
+          <h2 className="mt-6 text-[34px] leading-tight font-bold tracking-[-0.03em]">
+            {passed
+              ? "That's the security briefing done"
+              : `You need ${PASS_MARK} of ${QUESTIONS.length}`}
+          </h2>
+          <p className="mt-3 max-w-[46ch] text-[17px] leading-normal text-fg-muted">
+            {passed
+              ? "Recorded against your name and today's version of the content. You will not be asked again for this site."
+              : "Nothing is held against you — read the five points again and answer them once more."}
+          </p>
+        </div>
+
+        <BriefingFooter
+          hint={
+            passed
+              ? "Recorded · one photo to go"
+              : "The questions come back in a different order"
+          }
+        >
+          {passed ? (
+            <Button size="cta" onClick={onContinue}>
+              Continue
+            </Button>
+          ) : (
+            <Button size="cta" onClick={retake}>
+              Read it again
+            </Button>
+          )}
+        </BriefingFooter>
+      </div>
+    );
+  }
+
+  /* -- one question at a time -- */
+  return (
+    <div className="flex min-h-0 flex-1 flex-col px-10 pt-4 pb-6">
+      {header}
+
+      <div className="mt-4 flex min-h-0 flex-1 gap-12">
+        <div className="flex w-104 flex-none flex-col">
+          <span className="font-mono text-[13px] tracking-[0.14em] text-lane-fill uppercase">
+            Question {index + 1} of {deck.length}
+          </span>
+          <h2 className="mt-2.5 text-[30px] leading-[1.14] font-bold tracking-[-0.03em]">
+            {question.situation}
+          </h2>
+          <p className="mt-2.5 text-[17px] leading-normal text-fg-subtle">
+            {question.ask}
+          </p>
+
+          {picked ? (
+            <Banner
+              tone={picked.correct ? "success" : "danger"}
+              className="mt-auto"
+            >
+              {question.rule}
+            </Banner>
+          ) : null}
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-3.5">
+          {question.options.map((option) => {
+            const chosen = picked === option;
+            return (
+              <button
+                key={option.text}
+                onClick={() => answer(option)}
+                disabled={picked !== null}
+                className={`rounded-[16px] border px-5 py-4.5 text-left text-[19px] leading-snug font-medium transition-colors duration-fast ease-out-quad focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring enabled:hover:bg-surface ${
+                  picked && option.correct
+                    ? "border-[1.5px] border-success-line bg-success-tint"
+                    : chosen
+                      ? "border-[1.5px] border-danger-line bg-danger-tint"
+                      : "border-line-strong disabled:opacity-50"
+                }`}
+              >
+                {option.text}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <BriefingFooter
+        hint={`No time limit · ${PASS_MARK} of ${QUESTIONS.length} to pass`}
+      >
+        <Button size="cta" disabled={picked === null} onClick={next}>
+          {atLast ? "See how you did" : "Next question"}
+        </Button>
+      </BriefingFooter>
+    </div>
+  );
+}

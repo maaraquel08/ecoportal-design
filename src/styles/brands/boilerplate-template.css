@@ -1,0 +1,123 @@
+/* ==================================================================
+ * Brand: TEMPLATE — do not import this file.
+ *
+ * Canonical boilerplate for a new brand. To create one:
+ *   1. Copy to src/styles/brands/<brand>.css
+ *   2. Replace every BRAND with the brand key (lowercase, no spaces)
+ *      and every <value> with a real value — assign ALL tokens; any
+ *      token skipped falls back to the default brand (ledger.css,
+ *      which owns :root instead of [data-brand]).
+ *   3. Register it: add the @import in src/app/globals.css (AFTER the
+ *      default brand — order matters), the brand key to BRANDS in
+ *      src/styles/contract.ts, and to the Brand toolbar items in
+ *      .storybook/preview.tsx.
+ *   4. Activate: <html data-brand="BRAND"> in src/app/layout.tsx
+ *      (the default brand needs no attribute).
+ *   5. Run the token parity check: npx vitest --project storybook
+ *      run src/styles/tokens.stories.tsx
+ *
+ * Rules of the contract:
+ *   - Brand files assign BARE semantic names (--accent, --bg); the
+ *     @theme block in globals.css maps them to utilities
+ *     (bg-accent). Names are fixed — never rename, never add
+ *     product-specific names outside section 1 primitives.
+ *   - Product/domain vocabulary lives ONLY in section 1 primitives
+ *     (e.g. Ledger's --money-in) and is mapped to generic roles.
+ *   - Dark mode: flip the primitives, then override only the
+ *     semantics that genuinely change. Comment the reason.
+ *   - All brand files keep this exact section order so they read as
+ *     mirrors: primitives → surfaces & text → interactive → status
+ *     → shape & type.
+ *
+ * Optional slots (skip freely; structural defaults apply):
+ *   --brand-shadow-raised, --brand-shadow-overlay — tinted elevation.
+ * Reserved, not yet in the contract (likely future widenings —
+ * coordinate with the maintainer, don't self-serve):
+ *   type scale roles, spacing/density scale, motion durations.
+ * ================================================================== */
+
+[data-brand="BRAND"] {
+  /* -- 1. primitives: neutral ramp (named by lightness) ------------
+   * Steps keep their role across brands: line is always the hairline,
+   * ink is always primary text. Add steps by lightness if needed. */
+  --n-0: <value>;   /* canvas */
+  --n-50: <value>;  /* weak */
+  --n-100: <value>; /* fill */
+  --n-200: <value>; /* line */
+  --n-300: <value>; /* edge */
+  --n-400: <value>; /* mute */
+  --n-500: <value>; /* quiet */
+  --n-700: <value>; /* body */
+  --n-900: <value>; /* ink */
+
+  /* -- 1. primitives: brand hues -----------------------------------
+   * The only section with brand-specific names. Name them in the
+   * brand's own vocabulary and map them to generic roles below. */
+  --BRAND-primary: <value>; /* the brand voice: CTAs, focus */
+  --BRAND-paper: <value>;   /* page and card fills */
+
+  /* -- 2. surfaces & text ------------------------------------------ */
+  --bg: var(--BRAND-paper);
+  --surface: var(--n-50);
+  --surface-raised: var(--BRAND-paper);
+  --fg: var(--n-900);
+  --fg-muted: var(--n-700);
+  --fg-subtle: var(--n-500);
+  --line: var(--n-200);
+  --line-strong: var(--n-300);
+
+  /* -- 3. interactive ----------------------------------------------- */
+  --accent: var(--BRAND-primary);
+  --accent-hover: <value>;
+  --accent-fg: <value>;
+  --highlight: <value>;    /* single-use emphasis action */
+  --highlight-fg: <value>;
+  --ring: var(--BRAND-primary);
+
+  /* -- 4. status ----------------------------------------------------
+   * Generic roles. If the product attaches domain meaning (Ledger:
+   * success = money.in), say so here in a comment. */
+  --success: <value>;
+  --danger: <value>;
+  --danger-fg: <value>;
+  --info: <value>;
+
+  /* -- 5. shape & type ---------------------------------------------- */
+  --brand-radius-sm: <value>;
+  --brand-radius-md: <value>;
+  --brand-radius-lg: <value>;
+  --brand-radius-xl: <value>;
+  /* no brand typeface? use: var(--font-geist-sans, ui-sans-serif) */
+  --brand-font-sans: <value>;
+  --brand-font-mono: <value>;
+}
+
+/* Dark: state the brand's dark rule in one line (e.g. "paper flips to
+ * near-black; the ramp reverses by role; hues lift to hold on
+ * near-black"). Only tokens that change are listed. */
+[data-brand="BRAND"].dark {
+  /* -- 1. primitives ------------------------------------------------ */
+  --n-0: <value>;
+  --n-50: <value>;
+  --n-100: <value>;
+  --n-200: <value>;
+  --n-300: <value>;
+  --n-400: <value>;
+  --n-500: <value>;
+  --n-700: <value>;
+  --n-900: <value>;
+
+  --BRAND-primary: <value>; /* lifted to hold on near-black */
+  --BRAND-paper: <value>;   /* near-black, never pure black */
+
+  /* -- 2–4. semantic overrides --------------------------------------
+   * Typical set; keep only what actually changes for this brand. */
+  --surface-raised: var(--n-100);
+  --accent-hover: <value>;
+  --accent-fg: <value>;    /* lifted hue may take dark text */
+  --highlight-fg: <value>;
+  --danger-fg: <value>;
+  --success: <value>;
+  --danger: <value>;
+  --info: <value>;
+}

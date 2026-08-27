@@ -1,0 +1,266 @@
+@import "tailwindcss";
+
+/* Brand layers. Scoped under [data-brand]; the sc1m default (ledger)
+ * owns :root below, so attribute specificity wins when active. */
+@import "./styles/brands/ecoportal.css";
+
+/* transitions.dev snippets (page slide, error shake). */
+@import "./styles/transitions.css";
+
+
+@theme inline {
+    --color-bg: var(--bg);
+    --color-surface: var(--surface);
+    --color-surface-raised: var(--surface-raised);
+    --color-fg: var(--fg);
+    --color-fg-muted: var(--fg-muted);
+    --color-fg-subtle: var(--fg-subtle);
+    --color-line: var(--line);
+    --color-line-strong: var(--line-strong);
+    --color-accent: var(--accent);
+    --color-accent-hover: var(--accent-hover);
+    --color-accent-fg: var(--accent-fg);
+    --color-highlight: var(--highlight);
+    --color-highlight-fg: var(--highlight-fg);
+    --color-success: var(--success);
+    --color-danger: var(--danger);
+    --color-danger-fg: var(--danger-fg);
+    --color-info: var(--info);
+    --color-ring: var(--ring);
+    --font-sans: var(--brand-font-sans, var(--font-geist-sans, ui-sans-serif));
+    --font-mono: var(--brand-font-mono, var(--font-geist-mono, ui-monospace));
+    --radius-sm: var(--brand-radius-sm, 0.25rem);
+    --radius-md: var(--brand-radius-md, 0.375rem);
+    --radius-lg: var(--brand-radius-lg, 0.5rem);
+    --radius-xl: var(--brand-radius-xl, 0.75rem);
+    --shadow-raised: var(--brand-shadow-raised, 0 1px 2px 0 rgb(0 0 0 / 0.05));
+    --shadow-overlay: var(--brand-shadow-overlay, 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1));
+    --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --duration-fast: 150ms;
+  @keyframes toast-nudge {
+  50% {
+    scale: 1.05;
+        }
+    }
+  @keyframes ai-pulse-a {
+  from {
+    background-size: 44% 46%, 32% 38%, 24% 62%;
+    background-position: 34% -26%, 6% -18%, -7% 68%;
+    opacity: 0.55;
+        }
+  to {
+    background-size: 62% 58%, 22% 26%, 18% 44%;
+    background-position: 46% -10%, 20% 4%, 3% 84%;
+    opacity: 1;
+        }
+    }
+  @keyframes ai-pulse-b {
+  from {
+    background-size: 58% 34%, 20% 52%, 30% 30%;
+    background-position: 76% 122%, 106% 40%, 14% 118%;
+    opacity: 0.5;
+        }
+  to {
+    background-size: 40% 24%, 30% 34%, 46% 44%;
+    background-position: 62% 106%, 94% 22%, 26% 104%;
+    opacity: 1;
+        }
+    }
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+    --n-0: #eceae6;
+    --n-50: #f7f6f4;
+    --n-100: #ececea;
+    --n-200: #e6e4e0;
+    --n-300: #dcdad6;
+    --n-400: #a5a5a5;
+    --n-500: #8a8a8a;
+    --n-700: #5a5a5a;
+    --n-900: #252017;
+    --brand-ink: #252017;
+    --brand-accent: #fcc305;
+    --brand-paper: #ffffff;
+    --money-in: #0f7a45;
+    --money-out: #cf3a2c;
+    --bg: var(--brand-paper);
+    --surface: var(--n-50);
+    --surface-raised: var(--brand-paper);
+    --fg: var(--n-900);
+    --fg-muted: var(--n-700);
+    --fg-subtle: var(--n-500);
+    --line: var(--n-200);
+    --line-strong: var(--n-300);
+    --accent: var(--brand-ink);
+    --accent-hover: #3d372d;
+    --accent-fg: var(--brand-paper);
+    --highlight: var(--brand-accent);
+    --highlight-fg: #252017;
+    --ring: var(--brand-ink);
+    --success: var(--money-in);
+    --danger: var(--money-out);
+    --danger-fg: #ffffff;
+    --info: var(--brand-accent);
+    --brand-radius-sm: 5px;
+    --brand-radius-md: 10px;
+    --brand-radius-lg: 14px;
+    --brand-radius-xl: 22px;
+    --brand-font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --brand-font-mono: ui-monospace, Menlo, monospace;
+    --acc-expand: 250ms;
+    --acc-collapse: 250ms;
+    --acc-chevron: 250ms;
+    --acc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --popup-open-dur: 250ms;
+    --popup-close-dur: 150ms;
+    --popup-pre-scale: 0.97;
+    --popup-closing-scale: 0.99;
+    --popup-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --ai-hue: var(--color-info);
+    --ai-hue-ink: color-mix(in oklab, var(--ai-hue) 50%, var(--color-fg));
+}
+
+.dark {
+    --n-0: #14120e;
+    --n-50: #1e1b16;
+    --n-100: #26221b;
+    --n-200: #302b23;
+    --n-300: #3d372d;
+    --n-400: #6d6963;
+    --n-500: #918d85;
+    --n-700: #bab6ae;
+    --n-900: #f4f2ee;
+    --brand-ink: #ffffff;
+    --brand-paper: #14120e;
+    --money-in: #3fbc7a;
+    --money-out: #ff7a6b;
+    --surface-raised: var(--n-100);
+    --accent-hover: #dcdad6;
+    --accent-fg: #252017;
+    --danger-fg: #14120e;
+}
+
+@utility popup-motion {
+    transform-origin: var(--transform-origin);
+    transition-property: opacity, scale;
+    transition-duration: var(--popup-close-dur);
+    transition-timing-function: var(--popup-ease);
+    will-change: opacity, scale;
+  &[data-open] {
+    transition-duration: var(--popup-open-dur);
+    }
+  &[data-starting-style] {
+    scale: var(--popup-pre-scale);
+    opacity: 0;
+    }
+  &[data-ending-style] {
+    scale: var(--popup-closing-scale);
+    opacity: 0;
+    }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    }
+}
+
+.toast-nudge {
+    animation: toast-nudge 300ms var(--popup-ease);
+}
+
+.ai-wash {
+    background-image: linear-gradient(180deg, color-mix(in oklab, var(--ai-hue) 9%, var(--color-bg)) 0%, color-mix(in oklab, var(--ai-hue) 4%, var(--color-bg)) 66%, color-mix(in oklab, var(--ai-hue) 2%, var(--color-bg)) 100%);
+    border-color: color-mix(in oklab, var(--ai-hue) 16%, var(--color-line));
+}
+
+.ai-pulse {
+    position: relative;
+    isolation: isolate;
+}
+
+.ai-pulse::before, .ai-pulse::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background-repeat: no-repeat;
+    mask-image: radial-gradient(115% 115% at 50% 50%, transparent 16%, #000 70%);
+}
+
+.ai-pulse::before {
+    background-image: radial-gradient(closest-side, color-mix(in oklab, var(--ai-hue) 54%, transparent), transparent), radial-gradient(closest-side, color-mix(in oklab, var(--ai-hue) 50%, transparent), transparent), radial-gradient(closest-side, color-mix(in oklab, var(--ai-hue) 58%, transparent), transparent);
+    background-size: 52% 52%, 27% 32%, 21% 53%;
+    background-position: 40% -18%, 13% -7%, -2% 76%;
+    opacity: 0.78;
+    animation: ai-pulse-a 5200ms ease-in-out infinite alternate;
+}
+
+.ai-pulse::after {
+    background-image: radial-gradient(closest-side, color-mix(in oklab, var(--ai-hue) 60%, transparent), transparent), radial-gradient(closest-side, color-mix(in oklab, var(--ai-hue) 46%, transparent), transparent), radial-gradient(closest-side, color-mix(in oklab, var(--ai-hue) 64%, transparent), transparent);
+    background-size: 49% 29%, 25% 43%, 38% 37%;
+    background-position: 69% 114%, 100% 31%, 20% 111%;
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ai-hue) 34%, transparent);
+    opacity: 0.75;
+    animation: ai-pulse-b 7100ms ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-nudge {
+    animation: none;
+    }
+  .ai-pulse::before, .ai-pulse::after {
+    animation: none;
+    }
+}
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  /* This runs in a browser, so anything actionable should say so on
+   * hover. Tailwind v4's preflight sets `cursor: default` on buttons,
+   * and Base UI builds most controls out of buttons and roles — so the
+   * pointer is declared once here rather than as a class on every
+   * control. Utilities still win: the drag handle keeps `cursor-grab`. */
+  a[href],
+  button:not(:disabled),
+  label,
+  summary,
+  [role="button"]:not([aria-disabled="true"]),
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  [role="option"],
+  [role="tab"],
+  [role="radio"],
+  [role="checkbox"],
+  [role="switch"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  body {
+    /* Base UI needs a positioned body for correct backdrop behavior on iOS Safari 26+. */
+    position: relative;
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}

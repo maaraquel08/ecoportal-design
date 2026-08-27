@@ -1,0 +1,491 @@
+import * as React from "react";
+import { BackButton } from "@/components/back-button";
+import { ControlDeck } from "@/components/control-deck";
+import { type Notice } from "@/components/notice";
+import { TabletFrame } from "@/components/tablet-frame";
+import { Separator } from "@/components/ui/separator";
+import { useLane } from "@/hooks/use-lane";
+import { sentenceCase } from "@/lib/text";
+import {
+  BLANK,
+  REGISTERED,
+  type Company,
+} from "@/prototypes/contractor-firms";
+import {
+  BriefingScreen,
+  FirmScreen,
+  SIGN_ON_TOTAL,
+  TradeDetailsScreen,
+  WhoScreen,
+} from "@/prototypes/kiosk-contractor-signon";
+import { KioskLanding } from "@/prototypes/kiosk-landing";
+import { CheckedInScreen, PhotoScreen } from "@/prototypes/kiosk-steps";
+import { ScanPanel, useAutoScan } from "@/prototypes/scan-panel";
+import {
+  CONTRACTOR_PASS_CAPTION,
+  contractorPassRows,
+} from "@/prototypes/visitor-pass";
+
+/* -- the tape ------------------------------------------------------- */
+
+/**
+ * "Here to work", on the glass.
+ *
+ * Behind the door the tablet asks one question — have you worked with
+ * us before — and the answer picks the tape. A trade who cleared
+ * herself last night holds up her code and is gone in ten seconds; a
+ * trade who turns up cold does her firm, her details and the briefing
+ * standing here, in that order, because it is the order her phone
+ * would have used.
+ *
+ * Every screen already exists somewhere: the landing and the camera
+ * from the visitor journey, the sign-up steps and the briefing from
+ * the contractor's own pre-arrival flow. Nothing here is a second
+ * drawing of something the product already has.
+ *
+ * The landing is the platform speaking, so it is green. Everything
+ * past the work door is the contractor's own journey — she chose that
+ * lane on the previous screen — so the ramp turns orange and stays
+ * orange to the pass.
+ */
+type ScreenId =
+  | "landing"
+  | "who"
+  | "reader"
+  | "company"
+  | "details"
+  | "briefing"
+  | "photo"
+  | "on-site";
+
+type TapeStep = { id: ScreenId; label: string };
+
+/** What one of the two page-slide slots is showing. */
+type Slot = { index: number; id: ScreenId } | null;
+
+/** Which tape the answer to "have you been here before" picks. */
+type Route = "unchosen" | "returning" | "first-time";
+
+const WHO: TapeStep = { id: "who", label: "which one" };
+const PHOTO: TapeStep = { id: "photo", label: "your photo" };
+const ON_SITE: TapeStep = { id: "on-site", label: "on site" };
+
+const ROUTE_TAPE: Record<Route, readonly TapeStep[]> = {
+  unchosen: [WHO],
+  returning: [WHO, { id: "reader", label: "the reader" }, PHOTO, ON_SITE],
+  "first-time": [
+    WHO,
+    { id: "company", label: "your company" },
+    { id: "details", label: "your details" },
+    { id: "briefing", label: "the briefing" },
+    PHOTO,
+    ON_SITE,
+  ],
+};
+
+/** Opened by a door on someone else's landing, the landing is already
+ *  behind us; as its own tab it is where the walkthrough starts. */
+const LANDING: TapeStep = { id: "landing", label: "the landing" };
+
+/** Who is at the glass. The same job Dan's email was about. */
+const TRADE = {
+  firstName: "Priya",
+  company: REGISTERED[0].name,
+} as const;
+
+/** What the reader settles, before it has read anything. */
+const WILL_CHECK = [
+  {
+    title: "Who you are",
+    body: "Read off the code. Nothing to type, nothing to spell out.",
+  },
+  {
+    title: "Induction",
+    body: "That it is current for this site — you did it last night.",
+  },
+  {
+    title: "Permits",
+    body: "Anything open against today's work, and who signed it.",
+  },
+];
+
+/** What the reader settled, once it has. */
+const CHECKED = [
+  { label: "Identity", value: "Code matched" },
+  { label: "Induction", value: "Current to 4 Nov" },
+  { label: "Permit", value: "PMT-4471 signed" },
+];
+
+/** The same three facts for a trade who settled them at the glass. */
+const CHECKED_HERE = [
+  { label: "Identity", value: "Taken at the kiosk" },
+  { label: "Briefing", value: "Passed today" },
+  { label: "Access", value: "Level 4 · to 6:00pm" },
+];
+
+/** Today, as it concerns someone working on Level 4. */
+const SITE_NOTICES: Notice[] = [
+  {
+    category: "Permit",
+    when: "To 5:00pm",
+    title: "Hot works PMT-4471 · Level 4 riser",
+    body: "Fire watch for thirty minutes after you stop.",
+  },
+  {
+    category: "Access",
+    when: "Until 5pm",
+    title: "Level 4 passenger lift out",
+    body: "Service lift or the stairs. Tools go in the service lift.",
+  },
+];
+
+/* -- W1 · the reader ------------------------------------------------ */
+
+function ReaderScreen({
+  active,
+  onBack,
+  onScanned,
+}: {
+  active: boolean;
+  /** Back goes to whichever landing we came in through — ours, or the
+   *  tab that opened us. */
+  onBack: () => void;
+  onScanned: () => void;
+}) {
+  const { capturing, readNow } = useAutoScan(active, onScanned);
+
+  return (
+    /* The scanner's own proportions: viewfinder and instruction side by
+     * side across the full glass, as on the visitor path. */
+    <div className="flex min-h-0 flex-1 flex-col px-10 pt-5 pb-7">
+      <div className="flex items-center justify-between gap-6">
+        <BackButton onClick={onBack} />
+        <div className="flex items-center gap-4">
+          <span className="font-mono text-[13px] tracking-[0.14em] text-lane-fill uppercase">
+            {capturing ? "Code read" : "Waiting for a code"}
+          </span>
+          <span className="h-4.5 w-px bg-line" />
+          <span className="text-[15px] text-fg-subtle">Tue 9 Sept</span>
+        </div>
+      </div>
+
+      <div className="flex min-h-0 flex-1 items-center gap-12">
+        <ScanPanel capturing={capturing} onRead={readNow} />
+
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[40px] leading-[1.08] font-bold tracking-[-0.03em]">
+            Hold your clearance code to the reader
+          </h2>
+          <p className="mt-3 max-w-[34ch] text-[19px] leading-normal text-fg-muted">
+            The one from last night's email. Wallet, screen or paper — all
+            fine.
+          </p>
+
+          <div className="mt-5 flex flex-col gap-2.5">
+            {WILL_CHECK.map((item) => (
+              <div key={item.title} className="flex items-baseline gap-3.5">
+                <span className="w-32 flex-none text-[15px] font-semibold">
+                  {item.title}
+                </span>
+                <span className="min-w-0 flex-1 text-[15px] leading-normal text-fg-subtle">
+                  {item.body}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex items-center gap-2.5">
+            <span className="size-2.5 flex-none rounded-full bg-lane-base" />
+            <span className="font-mono text-[13px] tracking-[0.14em] text-lane-fill uppercase">
+              {capturing
+                ? "Got it · checking your clearance"
+                : "Reader is lit · scanning"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="mt-5 flex items-center justify-between gap-6">
+        <span className="font-mono text-[13px] text-fg-subtle">
+          Hold steady for about a second
+        </span>
+        <span className="text-[15px] text-fg-subtle">
+          No code? The desk can look you up.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* -- the prototype -------------------------------------------------- */
+
+export function KioskContractor({
+  tabs,
+  onExit,
+}: {
+  tabs: React.ReactNode;
+  /** Set when the flow was opened by another tab's landing, so back
+   *  and the reset both return there instead of to our own. */
+  onExit?: () => void;
+}) {
+  const [route, setRoute] = React.useState<Route>("unchosen");
+  /** The firm she picks, or types. Empty until the company step. */
+  const [company, setCompany] = React.useState<Company>(BLANK);
+  const [firstName, setFirstName] = React.useState<string>(TRADE.firstName);
+
+  /** The tape for a route, with the landing in front of it when this
+   *  tab is the one that draws the landing. */
+  const tapeFor = (next: Route) =>
+    onExit ? ROUTE_TAPE[next] : [LANDING, ...ROUTE_TAPE[next]];
+  const tape = tapeFor(route);
+
+  const [step, setStep] = React.useState(0);
+
+  /* Which lane the glass is speaking in. The landing offers every
+   * lane, so it belongs to the house; behind the work door she has
+   * already chosen, and the screens are hers. */
+  const { setLane } = useLane();
+  const onLanding = tape[step].id === "landing";
+  React.useEffect(
+    () => setLane(onLanding ? "house" : "contractor"),
+    [onLanding, setLane],
+  );
+
+  /* transitions.dev · 08 · Page side-by-side. A slot holds the screen
+   * it is showing, not just its index: picking a door changes the
+   * tape's length, and the screen sliding out has to keep rendering
+   * even when its index no longer exists on the new tape. */
+  const [slots, setSlots] = React.useState<[Slot, Slot]>([
+    { index: 0, id: onExit ? WHO.id : LANDING.id },
+    null,
+  ]);
+  const [activeId, setActiveId] = React.useState<1 | 2>(1);
+  const [pendingId, setPendingId] = React.useState<1 | 2 | null>(null);
+  const [direction, setDirection] = React.useState<1 | -1>(1);
+
+  React.useEffect(() => {
+    if (pendingId === null) return;
+    const frame = requestAnimationFrame(() => {
+      setActiveId(pendingId);
+      setPendingId(null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pendingId]);
+
+  /* Picking a door lengthens the tape, so the route moves with the
+   * step — same hand-off as the phone's kiosk flow. */
+  const goTo = (next: number, nextRoute: Route = route) => {
+    if (next === step && nextRoute === route) return;
+    const targetId = activeId === 1 ? 2 : 1;
+    const slot: Slot = { index: next, id: tapeFor(nextRoute)[next].id };
+    setDirection(next > step ? 1 : -1);
+    setSlots(targetId === 1 ? [slot, slots[1]] : [slots[0], slot]);
+    setPendingId(targetId);
+    setRoute(nextRoute);
+    setStep(next);
+  };
+
+  /**
+   * Back walks the tape, never the history: from any screen it is the
+   * screen before it in this journey, whichever door got you here. It
+   * only leaves the flow from the first screen, where there is nothing
+   * before it — and then it goes back to the tab that opened us.
+   */
+  const backFrom = (index: number, nextRoute?: Route) => () => {
+    if (index > 0) {
+      goTo(index - 1, nextRoute ?? route);
+      return;
+    }
+    onExit?.();
+  };
+
+  /** The kiosk resets to whatever it was showing before this trade,
+   *  forgetting which door she came through. */
+  const reset = () => {
+    setCompany(BLANK);
+    setFirstName(TRADE.firstName);
+    if (onExit) {
+      onExit();
+      return;
+    }
+    goTo(0, "unchosen");
+  };
+
+  /* The deck has to be able to advance even while the door is
+   * unchosen, so it walks the first-timer branch by default — that is
+   * the longer journey and the one worth watching. */
+  const deckRoute: Route = route === "unchosen" ? "first-time" : route;
+  const deckTape = tapeFor(deckRoute);
+  const last = step === deckTape.length - 1;
+  const incomingId = pendingId ?? activeId;
+  const fromX = (id: 1 | 2) =>
+    (id === incomingId ? direction : -direction) === 1
+      ? "var(--page-slide-distance)"
+      : "calc(var(--page-slide-distance) * -1)";
+
+  const screenFor = ({ index, id }: NonNullable<Slot>): React.ReactNode => {
+    switch (id) {
+      /* The same landing the visitor journey opens on. The work door
+       * asks who she is; the pass shortcut is the same promise a
+       * returning trade makes, so it skips the question and goes
+       * straight to the reader. The rest belong to other tabs and
+       * stay inert. */
+      case "landing":
+        return (
+          <KioskLanding
+            onWork={() => goTo(index + 1)}
+            onScan={() => goTo(index + 2, "returning")}
+          />
+        );
+      /* One question, two big doors. Everything after it differs. */
+      case "who":
+        return (
+          <WhoScreen
+            onFirstTime={() => goTo(index + 1, "first-time")}
+            onReturning={() => goTo(index + 1, "returning")}
+            onBack={backFrom(index, "unchosen")}
+          />
+        );
+      case "company":
+        return (
+          <FirmScreen
+            company={company}
+            onChange={setCompany}
+            onContinue={() => goTo(index + 1)}
+            onBack={backFrom(index, "unchosen")}
+          />
+        );
+      case "details":
+        return (
+          <TradeDetailsScreen
+            company={company}
+            onContinue={(name) => {
+              setFirstName(name);
+              goTo(index + 1);
+            }}
+            onBack={backFrom(index)}
+          />
+        );
+      case "briefing":
+        return (
+          <BriefingScreen
+            active={step === index}
+            onContinue={() => goTo(index + 1)}
+            onBack={backFrom(index)}
+          />
+        );
+      case "reader":
+        return (
+          <ReaderScreen
+            active={step === index}
+            onBack={backFrom(index)}
+            onScanned={() => goTo(index + 1)}
+          />
+        );
+      case "photo":
+        return (
+          <PhotoScreen
+            active={step === index}
+            step={
+              route === "first-time" ? `${SIGN_ON_TOTAL} of ${SIGN_ON_TOTAL}` : "2 of 3"
+            }
+            onBack={backFrom(index)}
+            onDone={() => goTo(index + 1)}
+          />
+        );
+      /* Study K2, with the contractor's facts in it: what the reader
+       * settled, the way to the service lift, and the pass her phone is
+       * already carrying. */
+      case "on-site":
+        return (
+          <CheckedInScreen
+            active={step === index}
+            firstName={firstName}
+            status="On site · 08:04AM"
+            headline={`You're on site, ${firstName}. Level 4 whenever you're ready.`}
+            checks={route === "first-time" ? CHECKED_HERE : CHECKED}
+            route={{
+              zone: "Lobby · ground floor",
+              target: "Service lift → Level 4",
+              caption:
+                "Past the café to the service corridor, lift on the right",
+            }}
+            notices={SITE_NOTICES}
+            passCaption={CONTRACTOR_PASS_CAPTION}
+            passRows={contractorPassRows(company.name || TRADE.company)}
+            passNote="Scan out at this reader when you leave. For security a visit cannot be ended from a phone."
+            onDone={reset}
+          />
+        );
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <TabletFrame>
+        <div
+          className="t-page-slide min-h-0 flex-1"
+          data-page={String(activeId)}
+        >
+          {([1, 2] as const).map((id) => {
+            const slot = id === 1 ? slots[0] : slots[1];
+            return (
+              <section
+                key={id}
+                className="t-page flex flex-col"
+                data-page-id={String(id)}
+                style={{ "--t-page-from-x": fromX(id) } as React.CSSProperties}
+                aria-hidden={id !== activeId}
+              >
+                {slot === null ? null : screenFor(slot)}
+              </section>
+            );
+          })}
+        </div>
+      </TabletFrame>
+
+      <ControlDeck
+        tabs={tabs}
+        player={
+          <>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex-none font-mono text-sm font-medium text-lane-fill">
+                {step + 1}
+                <span className="mx-0.5 text-fg-subtle">/</span>
+                {deckTape.length}
+              </span>
+              <span className="h-4.5 w-px flex-none bg-line" />
+              <span className="truncate text-sm text-fg-muted">
+                Current · {tape[step].label}
+              </span>
+            </div>
+            <button
+              onClick={() =>
+                last ? goTo(0, "unchosen") : goTo(step + 1, deckRoute)
+              }
+              className="flex flex-none items-center gap-2 rounded-full bg-lane-tint px-4 py-2 text-sm font-semibold text-lane-fill transition-colors duration-fast ease-out-quad hover:bg-lane-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              {last ? "Replay" : sentenceCase(deckTape[step + 1].label)}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-lane-base"
+                aria-hidden="true"
+              >
+                <path d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </>
+        }
+      />
+    </div>
+  );
+}
