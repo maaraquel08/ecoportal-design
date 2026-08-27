@@ -1,7 +1,7 @@
 import * as React from "react";
 import { BackButton } from "@/components/back-button";
 import { ControlDeck } from "@/components/control-deck";
-import { type Notice } from "@/components/notice";
+import { WORK_NOTICES } from "@/components/notice";
 import { TabletFrame } from "@/components/tablet-frame";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -128,22 +128,6 @@ const WILL_CHECK = [
   {
     title: "Permits",
     body: "Anything open against today's work, and who signed it.",
-  },
-];
-
-/** Today, as it concerns someone working on Level 4. */
-const SITE_NOTICES: Notice[] = [
-  {
-    category: "Permit",
-    when: "To 5:00pm",
-    title: "Hot works PMT-4471 · Level 4 riser",
-    body: "Fire watch for thirty minutes after you stop.",
-  },
-  {
-    category: "Access",
-    when: "Until 5pm",
-    title: "Level 4 passenger lift out",
-    body: "Service lift or the stairs. Tools go in the service lift.",
   },
 ];
 
@@ -463,7 +447,7 @@ export function KioskContractor({
               caption:
                 "Past the café to the service corridor, lift on the right",
             }}
-            notices={SITE_NOTICES}
+            notices={WORK_NOTICES}
             passCaption={CONTRACTOR_PASS_CAPTION}
             passRows={contractorPassRows(company.name || TRADE.company)}
             passNote="Scan out at this reader when you leave. For security a visit cannot be ended from a phone."

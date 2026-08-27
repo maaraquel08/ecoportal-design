@@ -1,10 +1,23 @@
 import * as React from "react";
 import { ControlDeck } from "@/components/control-deck";
 import { useLane, type Lane } from "@/hooks/use-lane";
+import { WORK_NOTICES } from "@/components/notice";
 import { ContractorPrearrival } from "@/prototypes/contractor-prearrival";
+import { REGISTERED } from "@/prototypes/contractor-firms";
 import { KioskContractor } from "@/prototypes/kiosk-contractor";
+import { KioskPhone } from "@/prototypes/kiosk-phone";
+import {
+  CONTRACTOR_PASS_CAPTION,
+  contractorPassRows,
+} from "@/prototypes/visitor-pass";
 
-type Scenario = "first-time" | "known" | "kiosk" | "on-site" | "leaving";
+type Scenario =
+  | "first-time"
+  | "known"
+  | "kiosk"
+  | "kiosk-phone"
+  | "on-site"
+  | "leaving";
 
 /**
  * The lane a scenario speaks in. Pre-arrival is the contractor's own
@@ -16,6 +29,9 @@ const SCENARIO_LANE: Record<Scenario, Lane | null> = {
   "first-time": "contractor",
   known: "contractor",
   kiosk: null,
+  /* Her phone, in the lane the glass handed her — behind the work
+   * door everything is the contractor's. */
+  "kiosk-phone": "contractor",
   "on-site": "contractor",
   leaving: "exit",
 };
@@ -30,6 +46,7 @@ const TABS: { id: Scenario; label: string; ready: boolean }[] = [
   { id: "first-time", label: "Pre-arrival · first timer", ready: true },
   { id: "known", label: "Pre-arrival · known trade", ready: true },
   { id: "kiosk", label: "At kiosk", ready: true },
+  { id: "kiosk-phone", label: "At kiosk · her phone", ready: true },
   { id: "on-site", label: "On site", ready: false },
   { id: "leaving", label: "Leaving", ready: false },
 ];
@@ -89,6 +106,30 @@ export function ContractorPage() {
           key={scenario}
           tabs={tabs}
           known={scenario === "known"}
+        />
+      </div>
+    );
+  }
+
+  if (scenario === "kiosk-phone") {
+    /* Study K2·M for the contractor lane: the same screen the visitor
+     * lane ends on, carrying a trade's facts. */
+    return (
+      <div className="flex flex-col items-center px-8 pt-12 pb-44">
+        <KioskPhone
+          tabs={tabs}
+          status="On site · 08:04AM"
+          headline="You're on site, Priya"
+          body="Level 4 whenever you're ready. Dan is at the dock from 7:45."
+          route={{
+            zone: "Lobby · ground",
+            target: "Service lift → L4",
+            caption: "Past the café, then the service corridor",
+          }}
+          notices={WORK_NOTICES}
+          passCaption={CONTRACTOR_PASS_CAPTION}
+          passRows={contractorPassRows(REGISTERED[0].name)}
+          signOut="Hold this pass to the reader on your way out. For security a visit cannot be ended from a phone."
         />
       </div>
     );

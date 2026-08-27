@@ -33,6 +33,26 @@ export const TODAY_NOTICES: Notice[] = [
   },
 ];
 
+/**
+ * Today for someone working on Level 4 rather than visiting it. The
+ * permit reference is a fact she needs to know, not an action — which
+ * is what keeps it a notice.
+ */
+export const WORK_NOTICES: Notice[] = [
+  {
+    category: "Permit",
+    when: "To 5:00pm",
+    title: "Hot works PMT-4471 · Level 4 riser",
+    body: "Fire watch for thirty minutes after you stop.",
+  },
+  {
+    category: "Access",
+    when: "Until 5pm",
+    title: "Level 4 passenger lift out",
+    body: "Service lift or the stairs. Tools go in the service lift.",
+  },
+];
+
 export function NoticeCard({ notice }: { notice: Notice }) {
   return (
     <div className="rounded-[18px] bg-notice-tint px-4.5 py-4">
