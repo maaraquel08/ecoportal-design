@@ -170,7 +170,13 @@ export function ContractorPage() {
      * same flow opens off the landing's "Here to work" door and does. */
     return (
       <div className="w-full pt-12 pb-44">
-        <KioskContractor tabs={tabs} />
+        <KioskContractor
+          tabs={tabs}
+          /* The exit door on the landing. Leaving is the same reader
+           * for both lanes, so it is the shared flow with the trade's
+           * own content — her permit closing is the fact that differs. */
+          onLeaving={() => setScenario("leaving")}
+        />
       </div>
     );
   }

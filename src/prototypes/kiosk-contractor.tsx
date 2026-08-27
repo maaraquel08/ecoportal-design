@@ -219,11 +219,16 @@ function ReaderScreen({
 export function KioskContractor({
   tabs,
   onExit,
+  onLeaving,
 }: {
   tabs: React.ReactNode;
   /** Set when the flow was opened by another tab's landing, so back
    *  and the reset both return there instead of to our own. */
   onExit?: () => void;
+  /** The exit door on our own landing. Leaving is one reader for both
+   *  lanes, so this hands off to that flow rather than drawing it
+   *  again — and it is only wired when we draw the landing. */
+  onLeaving?: () => void;
 }) {
   const [route, setRoute] = React.useState<Route>("unchosen");
   /** The firm she picks, or types. Empty until the company step. */
@@ -362,6 +367,7 @@ export function KioskContractor({
               setDoor("pass");
               goTo(index + 2, "returning");
             }}
+            onLeaving={onLeaving}
           />
         );
       /* One question, two big doors. Everything after it differs. */
@@ -395,8 +401,13 @@ export function KioskContractor({
       case "briefing":
         return (
           <BriefingScreen
-            active={step === index}
             onContinue={() => goTo(index + 1)}
+            /* She took the code, so the glass lets her go. There is no
+             * screen after this one on her phone's behalf: the tablet
+             * goes back to the landing for whoever is next, and she
+             * comes back in the way every cleared trade does — the
+             * pass shortcut, straight to the reader. */
+            onHandedOff={reset}
             onBack={backFrom(index)}
           />
         );
