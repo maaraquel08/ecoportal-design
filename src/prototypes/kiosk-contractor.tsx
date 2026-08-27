@@ -113,20 +113,6 @@ const WILL_CHECK = [
   },
 ];
 
-/** What the reader settled, once it has. */
-const CHECKED = [
-  { label: "Identity", value: "Code matched" },
-  { label: "Induction", value: "Current to 4 Nov" },
-  { label: "Permit", value: "PMT-4471 signed" },
-];
-
-/** The same three facts for a trade who settled them at the glass. */
-const CHECKED_HERE = [
-  { label: "Identity", value: "Taken at the kiosk" },
-  { label: "Briefing", value: "Passed today" },
-  { label: "Access", value: "Level 4 · to 6:00pm" },
-];
-
 /** Today, as it concerns someone working on Level 4. */
 const SITE_NOTICES: Notice[] = [
   {
@@ -411,7 +397,6 @@ export function KioskContractor({
             firstName={firstName}
             status="On site · 08:04AM"
             headline={`You're on site, ${firstName}. Level 4 whenever you're ready.`}
-            checks={route === "first-time" ? CHECKED_HERE : CHECKED}
             route={{
               zone: "Lobby · ground floor",
               target: "Service lift → Level 4",

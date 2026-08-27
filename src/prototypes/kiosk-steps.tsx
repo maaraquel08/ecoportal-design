@@ -215,8 +215,6 @@ export function CheckedInScreen({
   status = "Checked in · 04:24PM",
   headline,
   route = VISITOR_ROUTE,
-  /** Contractor lane: what the reader settled on the way in. */
-  checks,
   notices,
   passCaption,
   passRows,
@@ -228,7 +226,6 @@ export function CheckedInScreen({
   status?: string;
   headline?: string;
   route?: KioskRoute;
-  checks?: { label: string; value: string }[];
   notices?: Notice[];
   passCaption?: string;
   passRows?: PassRow[];
@@ -268,43 +265,6 @@ export function CheckedInScreen({
         {headline ??
           `You're in, ${firstName}. Head up to Level 9 whenever you're ready.`}
       </h2>
-
-      {/* Only the contractor lane has anything to report here: a
-        * visitor's check-in settles nothing that needed checking. */}
-      {checks ? (
-        <div className="mt-3.5 grid grid-cols-3 gap-3">
-          {checks.map((check) => (
-            <div
-              key={check.label}
-              className="flex items-center gap-3 rounded-[14px] bg-(--eco-green-tint) px-4 py-3"
-            >
-              <span className="flex size-6 flex-none items-center justify-center rounded-full bg-success text-bg">
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M5 12.5l4.5 4.5L19 7.5" />
-                </svg>
-              </span>
-              <span className="min-w-0">
-                <span className="block font-mono text-[10px] tracking-[0.14em] text-success uppercase">
-                  {check.label}
-                </span>
-                <span className="mt-0.5 block text-[15px] font-semibold">
-                  {check.value}
-                </span>
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : null}
 
       {/* One 12px gap grid: the map and the code take the slack, so the
         * two columns end level whatever the glass height is. */}
