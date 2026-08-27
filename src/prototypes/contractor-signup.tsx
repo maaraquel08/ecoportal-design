@@ -147,15 +147,6 @@ export function CompanyScreen({
               <Button size="cta" type="submit" className="w-full" onClick={shake}>
                 Continue
               </Button>
-              <Button
-                size="cta"
-                variant="secondary"
-                type="button"
-                className="w-full"
-                onClick={onBack}
-              >
-                Back to the job
-              </Button>
               <Footnote>
                 Once for the firm — not per job, and not per person.
               </Footnote>
@@ -168,6 +159,7 @@ export function CompanyScreen({
             total={total}
             title="Who do you work for?"
             body="If your firm is already registered with the building, the rest of this fills itself."
+            onBack={onBack}
           />
 
           <Field name="companyName" className="mt-4.5">
@@ -479,15 +471,6 @@ export function PersonScreen({
               <Button size="cta" type="submit" className="w-full" onClick={shake}>
                 Create my account
               </Button>
-              <Button
-                size="cta"
-                variant="secondary"
-                type="button"
-                className="w-full"
-                onClick={onBack}
-              >
-                Back
-              </Button>
             </>
           }
         >
@@ -497,6 +480,7 @@ export function PersonScreen({
             total={total}
             title="And who are you?"
             body="Your account and this job, on one screen. Three are required, and none of it is asked again on your next job."
+            onBack={onBack}
           />
 
           <Fieldset className="mt-4.5">
@@ -521,7 +505,7 @@ export function PersonScreen({
             ))}
           </Fieldset>
 
-          <Fieldset className="mt-4.5 pb-2">
+          <Fieldset className="mt-4.5">
             <FieldsetLegend>
               This job
               <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
@@ -542,7 +526,7 @@ export function PersonScreen({
             ))}
           </Fieldset>
 
-          <Banner tone="neutral" className="mt-1">
+          <Banner tone="neutral" className="mt-4.5 mb-2">
             Your details, not your firm's. Next time you confirm them in one
             tap.
           </Banner>

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { BackButton } from "@/components/back-button";
 import { ControlDeck } from "@/components/control-deck";
 import { NoticeList } from "@/components/notice";
 import { PhoneFrame, PhoneScreen } from "@/components/phone-frame";
@@ -228,19 +229,11 @@ function JobScreen({
             <Button size="cta" className="w-full" onClick={onContinue}>
               {known ? "Get cleared · 3 min" : "Set me up · 5 min"}
             </Button>
-            <Button
-              size="cta"
-              variant="secondary"
-              className="w-full"
-              onClick={onBack}
-            >
-              Back to email
-            </Button>
             <Footnote>Or do it when you get here. Either is fine.</Footnote>
           </>
         }
       >
-        <StepHeader step={step} total={total} />
+        <StepHeader step={step} total={total} onBack={onBack} />
 
         <div className="mt-4 overflow-hidden rounded-xl border border-line">
           <div className="bg-lane-tint px-5.5 py-5">
@@ -349,17 +342,10 @@ function SafetyScreen({
               >
                 Start · {QUESTIONS.length} questions
               </Button>
-              <Button
-                size="cta"
-                variant="secondary"
-                className="w-full"
-                onClick={onBack}
-              >
-                Back
-              </Button>
             </>
           }
         >
+          <BackButton onClick={onBack} className="mb-4" />
           <div className="flex items-center justify-between">
             <Mono className="text-lane-fill" size="text-[11px]">
               The briefing

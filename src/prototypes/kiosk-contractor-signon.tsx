@@ -127,8 +127,12 @@ export function WhoScreen({
             I've been here before
           </div>
           <p className="mt-2.5 text-base leading-normal text-fg-subtle">
-            Hold the code from your clearance email to the reader, or let the
-            desk look you up. About ten seconds.
+            The QR you already have still works — from your clearance email,
+            your wallet, or a printout. Nothing to fill in again: about ten
+            seconds at the reader.
+          </p>
+          <p className="mt-2.5 text-[15px] leading-normal text-fg-subtle">
+            Lost it? The desk can look you up by name.
           </p>
           <Button
             size="cta"
@@ -136,7 +140,7 @@ export function WhoScreen({
             className="mt-auto w-full text-lg"
             onClick={onReturning}
           >
-            Hold my code
+            Scan my pass
           </Button>
         </Card>
       </div>
@@ -439,9 +443,6 @@ export function FirmScreen({
             : "Asked once, for the whole firm"}
         </span>
         <div className="flex flex-none items-center gap-3">
-          <Button variant="outline" size="cta" type="button" onClick={onBack}>
-            Back
-          </Button>
           <Button size="cta" type="submit" onClick={shake}>
             Continue
           </Button>
@@ -557,9 +558,6 @@ export function TradeDetailsScreen({
           Yours, not your firm's · signed up and signed in at once
         </span>
         <div className="flex flex-none items-center gap-3">
-          <Button variant="outline" size="cta" type="button" onClick={onBack}>
-            Back
-          </Button>
           <Button size="cta" type="submit" onClick={shake}>
             Continue
           </Button>

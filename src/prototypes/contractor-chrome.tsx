@@ -1,4 +1,5 @@
 import * as React from "react";
+import { BackButton } from "@/components/back-button";
 
 /**
  * Chrome shared by every contractor phone screen.
@@ -50,15 +51,26 @@ export function StepCount({ step, total }: { step: number; total: number }) {
 }
 
 /** The site speaking: its mark, its name, and where you are. */
-export function StepHeader({ step, total }: { step: number; total: number }) {
+export function StepHeader({
+  step,
+  total,
+  onBack,
+}: {
+  step: number;
+  total: number;
+  onBack?: () => void;
+}) {
   return (
-    <div className="flex items-center justify-between">
+    <>
+      {onBack ? <BackButton onClick={onBack} className="mb-4" /> : null}
+      <div className="flex items-center justify-between">
       <span className="flex items-center gap-2.5">
         <span className="size-6.5 rounded-md bg-lane-base" aria-hidden="true" />
         <span className="text-[15px] font-semibold">Rushcutters Tower</span>
       </span>
       <StepCount step={step} total={total} />
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -69,15 +81,20 @@ export function StepHeading({
   total,
   title,
   body,
+  onBack,
 }: {
   label: string;
   step: number;
   total: number;
   title: string;
   body: string;
+  /** The way back, when there is one. Same component, same corner,
+   *  every screen in the lane — the phone's and the glass's. */
+  onBack?: () => void;
 }) {
   return (
     <>
+      {onBack ? <BackButton onClick={onBack} className="mb-4" /> : null}
       <div className="flex items-center justify-between">
         <Mono className="text-lane-fill" size="text-[11px]">
           {label}

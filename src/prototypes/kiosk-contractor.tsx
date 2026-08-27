@@ -101,11 +101,11 @@ const TRADE = {
 const WILL_CHECK = [
   {
     title: "Who you are",
-    body: "Read off the code. Nothing to type, nothing to spell out.",
+    body: "Read off the pass. Nothing to type, nothing to spell out.",
   },
   {
     title: "Induction",
-    body: "That it is current for this site — you did it last night.",
+    body: "That it is still current for this site. You did it once; we kept it.",
   },
   {
     title: "Permits",
@@ -166,7 +166,7 @@ function ReaderScreen({
         <BackButton onClick={onBack} />
         <div className="flex items-center gap-4">
           <span className="font-mono text-[13px] tracking-[0.14em] text-lane-fill uppercase">
-            {capturing ? "Code read" : "Waiting for a code"}
+            {capturing ? "Pass read" : "Waiting for a pass"}
           </span>
           <span className="h-4.5 w-px bg-line" />
           <span className="text-[15px] text-fg-subtle">Tue 9 Sept</span>
@@ -178,11 +178,11 @@ function ReaderScreen({
 
         <div className="min-w-0 flex-1">
           <h2 className="text-[40px] leading-[1.08] font-bold tracking-[-0.03em]">
-            Hold your clearance code to the reader
+            Hold your pass to the reader
           </h2>
           <p className="mt-3 max-w-[34ch] text-[19px] leading-normal text-fg-muted">
-            The one from last night's email. Wallet, screen or paper — all
-            fine.
+            The QR from your clearance email, or the one you were issued on an
+            earlier job here. Wallet, screen or paper — all fine.
           </p>
 
           <div className="mt-5 flex flex-col gap-2.5">
@@ -216,7 +216,7 @@ function ReaderScreen({
           Hold steady for about a second
         </span>
         <span className="text-[15px] text-fg-subtle">
-          No code? The desk can look you up.
+          No pass? The desk can look you up by name.
         </span>
       </div>
     </div>

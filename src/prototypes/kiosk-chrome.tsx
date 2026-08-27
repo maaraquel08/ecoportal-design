@@ -82,7 +82,7 @@ export function StepRail({
 }) {
   return (
     <div className="flex flex-none items-center gap-5.5">
-      <BackButton size="lg" className="rounded-full" onClick={onBack} />
+      <BackButton onClick={onBack} />
       <Stepper active={active} total={total} className="min-w-0 flex-1" />
       <span className="flex-none font-mono text-[13px] tracking-[0.1em] text-lane-fill uppercase">
         {label} · {active} of {total}
