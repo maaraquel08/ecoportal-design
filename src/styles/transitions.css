@@ -10,6 +10,7 @@
  *   08 · Page side-by-side  → between visitor prototype screens
  *   12 · Error state shake  → invalid fields
  *   15 · Shimmer text       → the kiosk waiting on someone's phone
+ *   01 · Card resize        → a briefing answer growing to hold its rule
  *
  * The snippets sit in @layer components so Tailwind utilities keep
  * precedence where they overlap — unlayered CSS outranks the utilities
@@ -35,6 +36,10 @@
      blocks are installed, not the whole scale. */
   --dock-settle-dur: 250ms;
   --dock-settle-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Card resize */
+  --resize-dur: 300ms;
+  --resize-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Shimmer text — a live status line, so it reads as in progress
      rather than stuck. Colours are the theme's own so the band
@@ -224,6 +229,27 @@
     .t-map-route,
     .t-map-halo,
     .t-map-pin { animation: none !important; }
+  }
+
+  /* -- 01 · Card resize ---------------------------------------------- */
+
+  /*
+    Usage:
+      <div class="t-resize">…</div>
+
+    Put `.t-resize` on any element and change its width/height
+    (directly, or via a state class such as `.is-small`). The
+    transition will tween the two sizes.
+  */
+  .t-resize {
+    transition:
+      width  var(--resize-dur) var(--resize-ease),
+      height var(--resize-dur) var(--resize-ease);
+    will-change: width, height;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .t-resize { transition: none !important; }
   }
 
   /* -- 15 · Shimmer text --------------------------------------------- */

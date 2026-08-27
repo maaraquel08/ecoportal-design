@@ -34,7 +34,10 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { EMAIL_RE, required } from "@/lib/form";
+import { QuestionOption } from "@/prototypes/briefing-question";
 import {
+  askLine,
+  optionState,
   PASS_MARK,
   QUESTIONS,
   RESPONSIBILITIES,
@@ -979,98 +982,25 @@ export function BriefingScreen({
             {question.situation}
           </h2>
           <p className="text-[20px] leading-[1.45] text-fg-subtle">
-            {picked
-              ? `${
-                  left === 0
-                    ? "That was the last one."
-                    : left === 1
-                      ? "One to go after this."
-                      : `${left} to go after this.`
-                } Nothing here is recorded against you personally.`
-              : question.ask}
+            {askLine({
+              ask: question.ask,
+              answered: picked !== null,
+              left,
+            })}
           </p>
         </div>
 
         <div className={`flex flex-col ${picked ? "gap-3" : "gap-3.5"}`}>
-          {question.options.map((option) => {
-            const chosen = picked === option;
-
-            /* Answered: the correction is attached to the option that
-             * was tapped rather than sitting in a panel across the
-             * screen, and the right answer is named out loud instead
-             * of being tinted and left to be inferred. */
-            if (picked && chosen) {
-              return (
-                <div
-                  key={option.text}
-                  className={`flex flex-col gap-3 rounded-[18px] border-[1.5px] px-6 py-5.5 ${
-                    option.correct
-                      ? "border-success-line bg-success-tint"
-                      : "border-danger-line bg-danger-tint"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4.5">
-                    <span className="text-[21px] leading-[1.3] font-semibold">
-                      {option.text}
-                    </span>
-                    <span
-                      className={`flex-none pt-1.25 font-mono text-xs tracking-[0.12em] whitespace-nowrap uppercase ${
-                        option.correct ? "text-success" : "text-danger"
-                      }`}
-                    >
-                      {option.correct ? "Correct" : "You picked"}
-                    </span>
-                  </div>
-                  <span
-                    className={`text-[17px] leading-[1.55] ${
-                      option.correct ? "text-success" : "text-danger"
-                    }`}
-                  >
-                    {question.rule}
-                  </span>
-                </div>
-              );
-            }
-
-            /* The right answer, when she did not pick it. */
-            if (picked && option.correct) {
-              return (
-                <div
-                  key={option.text}
-                  className="flex items-start justify-between gap-4.5 rounded-[18px] border-[1.5px] border-success-line bg-success-tint px-6 py-5.5"
-                >
-                  <span className="text-[21px] leading-[1.3] font-semibold">
-                    {option.text}
-                  </span>
-                  <span className="flex-none pt-1.25 font-mono text-xs tracking-[0.12em] whitespace-nowrap text-success uppercase">
-                    Correct
-                  </span>
-                </div>
-              );
-            }
-
-            /* Neither picked nor right: still legible, plainly out. */
-            if (picked) {
-              return (
-                <div
-                  key={option.text}
-                  className="rounded-[18px] border border-line px-6 py-5 text-[20px] leading-[1.35] font-medium text-fg-subtle"
-                >
-                  {option.text}
-                </div>
-              );
-            }
-
-            return (
-              <button
-                key={option.text}
-                onClick={() => answer(option)}
-                className="rounded-[18px] border border-line px-6.5 py-6 text-left text-[21px] leading-[1.35] font-medium transition-colors duration-fast ease-out-quad hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              >
-                {option.text}
-              </button>
-            );
-          })}
+          {question.options.map((option) => (
+            <QuestionOption
+              key={option.text}
+              option={option}
+              state={optionState(option, picked)}
+              rule={question.rule}
+              scale="tablet"
+              onSelect={() => answer(option)}
+            />
+          ))}
         </div>
       </div>
 

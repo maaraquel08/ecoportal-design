@@ -5,7 +5,10 @@ import { PhoneFrame, PhoneScreen } from "@/components/phone-frame";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { sentenceCase } from "@/lib/text";
+import { QuestionOption } from "@/prototypes/briefing-question";
 import {
+  askLine,
+  optionState,
   PASS_MARK,
   QUESTIONS,
   RESPONSIBILITIES,
@@ -476,36 +479,28 @@ function SafetyScreen({
           {question.situation}
         </h2>
         <p className="mt-2.5 text-base leading-normal text-fg-subtle">
-          {question.ask}
+          {askLine({
+            ask: question.ask,
+            answered,
+            left: deck.length - index - 1,
+          })}
         </p>
 
-        <div className="mt-5 flex flex-col gap-3">
-          {question.options.map((option) => {
-            const chosen = picked === option;
-            return (
-              <button
-                key={option.text}
-                onClick={() => answer(option)}
-                disabled={answered}
-                className={`rounded-lg border px-4.5 py-4 text-left text-[16.5px] leading-snug font-medium transition-colors duration-fast ease-out-quad focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring enabled:hover:bg-surface ${
-                  answered && option.correct
-                    ? "border-[1.5px] border-success-line bg-success-tint"
-                    : chosen
-                      ? "border-[1.5px] border-danger-line bg-danger-tint"
-                      : "border-line-strong disabled:opacity-50"
-                }`}
-              >
-                {option.text}
-              </button>
-            );
-          })}
+        {/* The same option component the glass uses, at phone scale:
+          * the rule opens inside the card she tapped rather than in a
+          * banner underneath the whole list. */}
+        <div className="mt-5 flex flex-col gap-3 pb-2">
+          {question.options.map((option) => (
+            <QuestionOption
+              key={option.text}
+              option={option}
+              state={optionState(option, picked)}
+              rule={question.rule}
+              scale="phone"
+              onSelect={() => answer(option)}
+            />
+          ))}
         </div>
-
-        {picked ? (
-          <Banner tone={picked.correct ? "success" : "danger"} className="mt-4">
-            {question.rule}
-          </Banner>
-        ) : null}
       </PhoneScreen>
     </>
   );
