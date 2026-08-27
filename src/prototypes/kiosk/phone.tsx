@@ -3,8 +3,8 @@ import { ControlDeck } from "@/components/control-deck";
 import { NoticeList, type Notice } from "@/components/notice";
 import { PhoneFrame, PhoneScreen } from "@/components/phone-frame";
 import { Button } from "@/components/ui/button";
-import { LobbyMap } from "@/prototypes/lobby-map";
-import { VisitorPassCard, type PassRow } from "@/prototypes/visitor-pass";
+import { LobbyMap } from "@/prototypes/shared/lobby-map";
+import { VisitorPassCard, type PassRow } from "@/prototypes/shared/pass-card";
 
 /* -- study K2·M · the same screen on her phone ----------------------- */
 

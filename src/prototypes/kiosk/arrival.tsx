@@ -4,15 +4,15 @@ import { ControlDeck } from "@/components/control-deck";
 import { TabletFrame } from "@/components/tablet-frame";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { KioskLanding } from "@/prototypes/kiosk-landing";
-import { KioskOnSite, visitorOnSite } from "@/prototypes/kiosk-onsite";
-import { PhotoScreen } from "@/prototypes/kiosk-steps";
-import { ScanPanel, useAutoScan } from "@/prototypes/scan-panel";
-import { BOOKINGS, type Booking } from "@/prototypes/bookings";
+import { KioskLanding } from "@/prototypes/kiosk/landing";
+import { KioskOnSite, visitorOnSite } from "@/prototypes/kiosk/onsite";
+import { PhotoScreen } from "@/prototypes/kiosk/steps";
+import { ScanPanel, useAutoScan } from "@/prototypes/shared/scan-panel";
+import { BOOKINGS, type Booking } from "@/prototypes/shared/bookings";
 import {
   CodeScreen,
   FindByNameScreen,
-} from "@/prototypes/kiosk-find-by-name";
+} from "@/prototypes/kiosk/find-by-name";
 
 /* -- the tape ------------------------------------------------------- */
 

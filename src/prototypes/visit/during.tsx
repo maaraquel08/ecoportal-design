@@ -15,7 +15,7 @@ import {
   contractorPassRows,
   VisitorPassCard,
   type PassRow,
-} from "@/prototypes/visitor-pass";
+} from "@/prototypes/shared/pass-card";
 
 /* -- the tape ------------------------------------------------------- */
 

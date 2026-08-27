@@ -10,7 +10,7 @@ import {
   QrIcon,
   TextSizeIcon,
   ToolboxIcon,
-} from "@/prototypes/kiosk-icons";
+} from "@/prototypes/shared/icons";
 
 /**
  * T0, the landing: the one screen every journey starts on, so it is

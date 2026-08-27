@@ -7,7 +7,7 @@ import {
   NoticesScreen,
   PassScreen,
   Row,
-} from "@/prototypes/visitor-steps";
+} from "@/prototypes/visitor/steps";
 import { PhoneFrame, PhoneScreen } from "@/components/phone-frame";
 import { Button } from "@/components/ui/button";
 

@@ -2,7 +2,7 @@ import * as React from "react";
 import { BackButton } from "@/components/back-button";
 import { Spinner } from "@/components/spinner";
 import { cssMs } from "@/lib/motion";
-import { useShake } from "@/prototypes/use-shake-invalid";
+import { useShake } from "@/hooks/use-shake-invalid";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
   maskedName,
   matchBookings,
   type Booking,
-} from "@/prototypes/bookings";
+} from "@/prototypes/shared/bookings";
 
 /** The code the booking's inbox receives. */
 const CODE = "418302";

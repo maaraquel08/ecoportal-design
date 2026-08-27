@@ -11,8 +11,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
-import { useShakeInvalid } from "@/prototypes/use-shake-invalid";
-import { VisitorPassCard } from "@/prototypes/visitor-pass";
+import { useShakeInvalid } from "@/hooks/use-shake-invalid";
+import { VisitorPassCard } from "@/prototypes/shared/pass-card";
 
 /**
  * The phone screens a visitor can meet either before arriving or after

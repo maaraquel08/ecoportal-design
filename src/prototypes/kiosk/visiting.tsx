@@ -20,11 +20,11 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
-import { HOSTS } from "@/prototypes/hosts";
-import { StepHeader } from "@/prototypes/kiosk-chrome";
-import { KioskOnSite, visitorOnSite } from "@/prototypes/kiosk-onsite";
-import { PhotoScreen } from "@/prototypes/kiosk-steps";
-import { useShakeInvalid } from "@/prototypes/use-shake-invalid";
+import { HOSTS } from "@/prototypes/shared/hosts";
+import { StepHeader } from "@/prototypes/kiosk/chrome";
+import { KioskOnSite, visitorOnSite } from "@/prototypes/kiosk/onsite";
+import { PhotoScreen } from "@/prototypes/kiosk/steps";
+import { useShakeInvalid } from "@/hooks/use-shake-invalid";
 
 /* -- the tape ------------------------------------------------------- */
 

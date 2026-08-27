@@ -1,14 +1,14 @@
 import * as React from "react";
 import { ControlDeck } from "@/components/control-deck";
 import { useLane, type Lane } from "@/hooks/use-lane";
-import { KioskArrival } from "@/prototypes/kiosk-arrival";
-import { KioskContractor } from "@/prototypes/kiosk-contractor";
-import { KioskHandoff } from "@/prototypes/kiosk-handoff";
-import { KioskPhone } from "@/prototypes/kiosk-phone";
-import { KioskVisiting } from "@/prototypes/kiosk-visiting";
-import { VisitDuring, visitorDuring } from "@/prototypes/visit-during";
-import { VisitLeaving, visitorLeaving } from "@/prototypes/visit-leaving";
-import { VisitorPrearrival } from "@/prototypes/visitor-prearrival";
+import { KioskArrival } from "@/prototypes/kiosk/arrival";
+import { KioskContractor } from "@/prototypes/kiosk/contractor";
+import { KioskHandoff } from "@/prototypes/kiosk/handoff";
+import { KioskPhone } from "@/prototypes/kiosk/phone";
+import { KioskVisiting } from "@/prototypes/kiosk/visiting";
+import { VisitDuring, visitorDuring } from "@/prototypes/visit/during";
+import { VisitLeaving, visitorLeaving } from "@/prototypes/visit/leaving";
+import { VisitorPrearrival } from "@/prototypes/visitor/prearrival";
 
 type Scenario =
   | "pre-arrival"

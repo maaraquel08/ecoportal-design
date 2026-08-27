@@ -10,30 +10,30 @@ import {
   BLANK,
   REGISTERED,
   type Company,
-} from "@/prototypes/contractor-firms";
+} from "@/prototypes/contractor/firms";
 import {
   BLANK_PERSON,
   type Person,
-} from "@/prototypes/contractor-person";
+} from "@/prototypes/contractor/person";
 import {
   BriefingScreen,
   FirmScreen,
   SIGN_ON_TOTAL,
   TradeDetailsScreen,
   WhoScreen,
-} from "@/prototypes/kiosk-contractor-signon";
-import { BOOKINGS, type Booking } from "@/prototypes/bookings";
+} from "@/prototypes/kiosk/contractor-signon";
+import { BOOKINGS, type Booking } from "@/prototypes/shared/bookings";
 import {
   CodeScreen,
   FindByNameScreen,
-} from "@/prototypes/kiosk-find-by-name";
-import { KioskLanding } from "@/prototypes/kiosk-landing";
+} from "@/prototypes/kiosk/find-by-name";
+import { KioskLanding } from "@/prototypes/kiosk/landing";
 import {
   contractorOnSite,
   KioskOnSite,
-} from "@/prototypes/kiosk-onsite";
-import { PhotoScreen } from "@/prototypes/kiosk-steps";
-import { ScanPanel, useAutoScan } from "@/prototypes/scan-panel";
+} from "@/prototypes/kiosk/onsite";
+import { PhotoScreen } from "@/prototypes/kiosk/steps";
+import { ScanPanel, useAutoScan } from "@/prototypes/shared/scan-panel";
 
 /* -- the tape ------------------------------------------------------- */
 

@@ -4,7 +4,7 @@ import { ControlDeck } from "@/components/control-deck";
 import { TabletFrame } from "@/components/tablet-frame";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ScanPanel, useAutoScan } from "@/prototypes/scan-panel";
+import { ScanPanel, useAutoScan } from "@/prototypes/shared/scan-panel";
 
 /* -- the tape ------------------------------------------------------- */
 
