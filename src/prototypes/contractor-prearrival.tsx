@@ -27,6 +27,10 @@ import {
   type Company,
 } from "@/prototypes/contractor-firms";
 import {
+  BLANK_PERSON,
+  type Person,
+} from "@/prototypes/contractor-person";
+import {
   CompanyScreen,
   PersonScreen,
   SignedUpScreen,
@@ -587,7 +591,26 @@ export function ContractorPrearrival({
   const [company, setCompany] = React.useState<Company>(
     known ? REGISTERED[0] : BLANK,
   );
-  const [firstName, setFirstName] = React.useState<string>(TRADE.firstName);
+  /**
+   * Her own fields, held here rather than inside the details screen,
+   * because the pass, the cleared screen and the tablet all read the
+   * same record. One shape, `Person`, shared with the kiosk.
+   *
+   * A known trade arrives with hers already on file; a first-timer's
+   * is empty apart from the address Dan's link was sent to, which is
+   * how the site looked her up in the first place.
+   */
+  const [person, setPerson] = React.useState<Person>(
+    known
+      ? {
+          ...BLANK_PERSON,
+          first: TRADE.firstName,
+          last: TRADE.lastName,
+          email: TRADE.email,
+        }
+      : { ...BLANK_PERSON, email: TRADE.email },
+  );
+  const firstName = person.first.trim() || TRADE.firstName;
 
   /* transitions.dev · 08 · Page side-by-side. */
   const [slots, setSlots] = React.useState<[number | null, number | null]>([
@@ -653,11 +676,10 @@ export function ContractorPrearrival({
       case "details":
         return (
           <PersonScreen
-            email={TRADE.email}
-            onContinue={(name) => {
-              setFirstName(name);
-              goTo(index + 1);
-            }}
+            company={company}
+            person={person}
+            onChange={setPerson}
+            onContinue={() => goTo(index + 1)}
             onBack={() => goTo(index - 1)}
             {...props}
           />

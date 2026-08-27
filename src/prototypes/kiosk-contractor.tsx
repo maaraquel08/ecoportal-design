@@ -12,6 +12,10 @@ import {
   type Company,
 } from "@/prototypes/contractor-firms";
 import {
+  BLANK_PERSON,
+  type Person,
+} from "@/prototypes/contractor-person";
+import {
   BriefingScreen,
   FirmScreen,
   SIGN_ON_TOTAL,
@@ -233,7 +237,10 @@ export function KioskContractor({
   const [route, setRoute] = React.useState<Route>("unchosen");
   /** The firm she picks, or types. Empty until the company step. */
   const [company, setCompany] = React.useState<Company>(BLANK);
-  const [firstName, setFirstName] = React.useState<string>(TRADE.firstName);
+  /** Her own fields, in the shape the phone's sign-up uses too, so
+   *  the two doors are filling in one record. */
+  const [person, setPerson] = React.useState<Person>(BLANK_PERSON);
+  const firstName = person.first.trim() || TRADE.firstName;
 
   /** The tape for a route, with the landing in front of it when this
    *  tab is the one that draws the landing. */
@@ -305,7 +312,7 @@ export function KioskContractor({
    *  forgetting which door she came through. */
   const reset = () => {
     setCompany(BLANK);
-    setFirstName(TRADE.firstName);
+    setPerson(BLANK_PERSON);
     if (onExit) {
       onExit();
       return;
@@ -361,10 +368,9 @@ export function KioskContractor({
         return (
           <TradeDetailsScreen
             company={company}
-            onContinue={(name) => {
-              setFirstName(name);
-              goTo(index + 1);
-            }}
+            person={person}
+            onChange={setPerson}
+            onContinue={() => goTo(index + 1)}
             onBack={backFrom(index)}
           />
         );

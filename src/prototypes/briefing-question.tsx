@@ -1,4 +1,3 @@
-import * as React from "react";
 import {
   type BriefingOption,
   type OptionState,
@@ -59,24 +58,15 @@ export function QuestionOption({
 }: {
   option: BriefingOption;
   state: OptionState;
-  /** The coaching note. Shown only inside the option she tapped. */
+  /** The coaching note. Opens only inside the option she tapped. */
   rule: string;
   scale: Scale;
   onSelect: () => void;
 }) {
-  const ruleRef = React.useRef<HTMLSpanElement>(null);
-  const [ruleHeight, setRuleHeight] = React.useState(0);
-
-  /* transitions.dev · 01 · Card resize needs a number to tween to, so
-   * the note is always in the DOM and measured; the wrapper it sits in
-   * is what opens. Remeasured per question, because the notes differ
-   * in length and the glass is a different width from a phone. */
-  React.useLayoutEffect(() => {
-    setRuleHeight(ruleRef.current?.offsetHeight ?? 0);
-  }, [rule, scale]);
-
   const showRule = state === "picked";
   const right = option.correct;
+  const locked = state !== "open";
+
   const tone =
     state === "picked"
       ? right
@@ -84,12 +74,31 @@ export function QuestionOption({
         : "border-[1.5px] border-danger-line bg-danger-tint"
       : TONE[state];
 
-  const body = (
-    <>
+  return (
+    /* transitions.dev · 21 · Accordion expand. The card is a button in
+     * every state on purpose: swapping it for a div once answered
+     * would mount a new element with the note already open, and there
+     * is nothing left to animate from. Locked with aria-disabled and
+     * pointer-events rather than `disabled`, which greys the label. */
+    <button
+      type="button"
+      className={`t-acc block w-full border text-left transition-colors duration-fast ease-out-quad ${
+        CARD[scale]
+      } ${tone} ${
+        locked
+          ? "pointer-events-none"
+          : "hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      }`}
+      data-open={showRule}
+      aria-disabled={locked}
+      onClick={locked ? undefined : onSelect}
+    >
       <span className="flex items-start justify-between gap-4">
         <span
           className={`${LABEL[scale]} ${
-            state === "out" ? "font-medium" : "font-semibold"
+            state === "out"
+              ? "font-medium text-fg-subtle"
+              : "font-semibold text-fg"
           }`}
         >
           {option.text}
@@ -100,41 +109,26 @@ export function QuestionOption({
               TAG[scale]
             } ${right ? "text-success" : "text-danger"}`}
           >
-            {state === "correct" || right ? "Correct" : "You picked"}
+            {right ? "Correct" : "You picked"}
           </span>
         ) : null}
       </span>
 
-      {/* Always rendered, so it can be measured; height is what moves. */}
-      <span
-        className="t-resize block overflow-hidden"
-        style={{ height: showRule ? ruleHeight : 0 }}
-        aria-hidden={!showRule}
-      >
-        <span
-          ref={ruleRef}
-          className={`block ${RULE[scale]} ${
-            right ? "text-success" : "text-danger"
-          }`}
-        >
-          {rule}
+      {/* Two elements, and the padding lives on the inner one: padding
+        * on the 0fr track would leave a strip of height behind and the
+        * note would never close. No display utilities on either — the
+        * snippet owns `display: grid` and the overflow clip. */}
+      <span className="t-acc-panel" aria-hidden={!showRule}>
+        <span className="t-acc-panel-inner">
+          <span
+            className={`block ${RULE[scale]} ${
+              right ? "text-success" : "text-danger"
+            }`}
+          >
+            {rule}
+          </span>
         </span>
       </span>
-    </>
+    </button>
   );
-
-  const shared = `block w-full border text-left transition-colors duration-fast ease-out-quad ${CARD[scale]} ${tone}`;
-
-  if (state === "open") {
-    return (
-      <button
-        onClick={onSelect}
-        className={`${shared} hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`}
-      >
-        {body}
-      </button>
-    );
-  }
-
-  return <div className={shared}>{body}</div>;
 }

@@ -10,7 +10,7 @@
  *   08 · Page side-by-side  → between visitor prototype screens
  *   12 · Error state shake  → invalid fields
  *   15 · Shimmer text       → the kiosk waiting on someone's phone
- *   01 · Card resize        → a briefing answer growing to hold its rule
+ *   21 · Accordion expand   → the note inside a briefing answer
  *
  * The snippets sit in @layer components so Tailwind utilities keep
  * precedence where they overlap — unlayered CSS outranks the utilities
@@ -37,9 +37,11 @@
   --dock-settle-dur: 250ms;
   --dock-settle-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Card resize */
-  --resize-dur: 300ms;
-  --resize-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Accordion expand */
+  --acc-expand: 250ms;
+  --acc-collapse: 250ms;
+  --acc-chevron: 250ms;
+  --acc-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Shimmer text — a live status line, so it reads as in progress
      rather than stuck. Colours are the theme's own so the band
@@ -231,25 +233,56 @@
     .t-map-pin { animation: none !important; }
   }
 
-  /* -- 01 · Card resize ---------------------------------------------- */
+  /* -- 21 · Accordion expand ----------------------------------------- */
 
-  /*
-    Usage:
-      <div class="t-resize">…</div>
-
-    Put `.t-resize` on any element and change its width/height
-    (directly, or via a state class such as `.is-small`). The
-    transition will tween the two sizes.
-  */
-  .t-resize {
+  /* grid-template-rows 0fr → 1fr gives a clean height animation
+     with no JS measurement; the inner element clips overflow. */
+  .t-acc-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--acc-collapse) var(--acc-ease);
+  }
+  .t-acc[data-open="true"] .t-acc-panel {
+    grid-template-rows: 1fr;
+    transition: grid-template-rows var(--acc-expand) var(--acc-ease);
+  }
+  .t-acc-panel-inner {
+    overflow: hidden;
+    opacity: 0;
+    filter: blur(2px);
     transition:
-      width  var(--resize-dur) var(--resize-ease),
-      height var(--resize-dur) var(--resize-ease);
-    will-change: width, height;
+      opacity var(--acc-collapse) var(--acc-ease),
+      filter var(--acc-collapse) var(--acc-ease);
+  }
+  .t-acc[data-open="true"] .t-acc-panel-inner {
+    opacity: 1;
+    filter: blur(0);
+    transition:
+      opacity var(--acc-expand) var(--acc-ease),
+      filter var(--acc-expand) var(--acc-ease);
+  }
+  /* Flip the chevron vertically to turn the "v" into a "^".
+     scaleY(-1) about the centre passes through a flat line at
+     the midpoint (same look as a `d:` path morph) but animates
+     in every browser, unlike CSS `d:` morphing (Chromium only).
+     The chevron path is symmetric about the 16x16 viewBox
+     centre, so the flip lands exactly on the "^"; non-scaling
+     -stroke keeps the stroke width constant through the flip. */
+  .t-acc-chevron {
+    display: inline-flex;
+    transform: scaleY(1);
+    transform-origin: center;
+    transition: transform var(--acc-chevron) var(--acc-ease);
+  }
+  .t-acc-chevron path { vector-effect: non-scaling-stroke; }
+  .t-acc[data-open="true"] .t-acc-chevron {
+    transform: scaleY(-1);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .t-resize { transition: none !important; }
+    .t-acc-panel, .t-acc-panel-inner, .t-acc-chevron {
+      transition: none !important;
+    }
   }
 
   /* -- 15 · Shimmer text --------------------------------------------- */

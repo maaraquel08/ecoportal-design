@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { EMAIL_RE, required } from "@/lib/form";
+import { required } from "@/lib/form";
 import { QuestionOption } from "@/prototypes/briefing-question";
 import {
   askLine,
@@ -50,10 +50,16 @@ import {
   REGISTERED,
   type Company,
 } from "@/prototypes/contractor-firms";
-import { HOSTS } from "@/prototypes/hosts";
 import { StepHeader, StepRail, Stepper } from "@/prototypes/kiosk-chrome";
 import { Card, Tile } from "@/prototypes/kiosk-landing";
 import { PersonIcon, QrIcon, ToolboxIcon } from "@/prototypes/kiosk-icons";
+import {
+  CompanyReadOnly,
+  personComplete,
+  personFields,
+  PersonFieldRow,
+  type Person,
+} from "@/prototypes/contractor-person";
 import { useShakeInvalid } from "@/prototypes/use-shake-invalid";
 
 /**
@@ -447,29 +453,43 @@ export function FirmScreen({
 
 /* -- W4 · your details · 2 of 4 ------------------------------------- */
 
+/**
+ * Sign-up and check-in, asked together.
+ *
+ * The brief lists two forms for a first-timer at the glass — the five
+ * fields that make her account and the seven that check her in — and
+ * four of those are the same four. Asking them twice in one session is
+ * the thing a lobby cannot afford, so the union is asked once, from
+ * `PERSON_FIELDS`, and the two lifetimes stay visible as two groups:
+ * what is true forever, and what is true today.
+ */
+
 export function TradeDetailsScreen({
   company,
+  person,
+  onChange,
   onContinue,
   onBack,
 }: {
   /** Settled on the previous step, so it is shown rather than asked. */
   company: Company;
-  onContinue: (firstName: string) => void;
+  person: Person;
+  onChange: (next: Person) => void;
+  onContinue: () => void;
   onBack: () => void;
 }) {
   const { scopeRef, shake } = useShakeInvalid<HTMLFormElement>();
-  const [host, setHost] = React.useState<string | null>(null);
+
+  const set = (key: keyof Person) => (value: string) =>
+    onChange({ ...person, [key]: value });
 
   return (
     <Form
       ref={scopeRef}
       className="flex min-h-0 flex-1 flex-col gap-0 px-10 pt-4 pb-6"
-      onFormSubmit={(values) => {
-        const first = String(values.first ?? "").trim();
-        const last = String(values.last ?? "").trim();
-        const email = String(values.email ?? "").trim();
-        if (!first || !last || !EMAIL_RE.test(email)) return;
-        onContinue(first);
+      onFormSubmit={() => {
+        if (!personComplete(person)) return;
+        onContinue();
       }}
     >
       <StepHeader
@@ -483,142 +503,58 @@ export function TradeDetailsScreen({
         And who are you?
       </h2>
       <p className="mt-2 max-w-[64ch] text-[17px] text-fg-muted">
-        Three required, three if you want them. Your firm is already answered
-        — nothing from the last screen is asked twice.
+        Your account and today's sign-in, on one screen. Three are
+        required — your firm is already answered, and nothing is asked
+        twice.
       </p>
 
-      <div className="mt-4 -mx-1 grid min-h-0 flex-1 grid-cols-2 content-start gap-x-7.5 gap-y-3.5 px-1">
-        <Field
-          name="first"
-          validationMode="onSubmit"
-          validate={required("Enter your first name")}
-        >
-          <FieldLabel>First name</FieldLabel>
-          <FieldControl
-            placeholder="Priya"
-            autoComplete="given-name"
-            autoCapitalize="words"
-            className="h-12 text-base"
-          />
-          <FieldError />
-        </Field>
+      {/* The negative margin gives focus rings their two pixels back,
+        * the same way the firm step's grid does. */}
+      <div className="mt-3.5 -mx-1 grid min-h-0 flex-1 grid-cols-2 content-start gap-x-7.5 gap-y-3.5 overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <GroupLabel>
+          Your details
+          <span className="ml-2 normal-case tracking-normal">
+            asked once ever
+          </span>
+        </GroupLabel>
 
-        <Field
-          name="last"
-          validationMode="onSubmit"
-          validate={required("Enter your last name")}
-        >
-          <FieldLabel>Last name</FieldLabel>
-          <FieldControl
-            placeholder="Raman"
-            autoComplete="family-name"
-            autoCapitalize="words"
-            className="h-12 text-base"
+        {personFields("identity").map((field) => (
+          <PersonFieldRow
+            key={field.key}
+            field={field}
+            surface="kiosk"
+            value={person[field.key]}
+            onChange={set(field.key)}
+            className={field.wide ? "col-span-2" : undefined}
           />
-          <FieldError />
-        </Field>
+        ))}
 
-        <Field
-          name="email"
-          validationMode="onSubmit"
-          validate={(value) => {
-            const email = String(value ?? "").trim();
-            if (!email) return "Enter your email — your pass is sent here";
-            if (!EMAIL_RE.test(email))
-              return "That email doesn't look right — check for a typo";
-            return null;
-          }}
-        >
-          <FieldLabel>Email</FieldLabel>
-          <FieldControl
-            type="email"
-            inputMode="email"
-            placeholder="priya.raman@kellyelec.com.au"
-            autoComplete="email"
-            autoCapitalize="none"
-            spellCheck={false}
-            className="h-12 text-base"
+        <GroupLabel className="mt-2.5">
+          This visit
+          <span className="ml-2 normal-case tracking-normal">
+            asked again next job
+          </span>
+        </GroupLabel>
+
+        <CompanyReadOnly name={company.name} />
+
+        {personFields("visit").map((field) => (
+          <PersonFieldRow
+            key={field.key}
+            field={field}
+            surface="kiosk"
+            value={person[field.key]}
+            onChange={set(field.key)}
+            className={field.wide ? "col-span-2" : undefined}
           />
-          <FieldDescription>
-            Next time your clearance arrives here instead
-          </FieldDescription>
-          <FieldError />
-        </Field>
-
-        <Field name="mobile">
-          <FieldLabel>
-            Mobile number
-            <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
-              Optional
-            </span>
-          </FieldLabel>
-          <FieldControl
-            type="tel"
-            inputMode="tel"
-            placeholder="So the site can reach you"
-            autoComplete="tel"
-            className="h-12 text-base"
-          />
-        </Field>
-
-        {/* Carried through from the firm step. It is on the brief's
-          * check-in list, so it is shown — but a value the building
-          * already holds is never re-typed in a lobby. */}
-        <Field name="company">
-          <FieldLabel>Company</FieldLabel>
-          <FieldControl
-            value={company.name}
-            readOnly
-            tabIndex={-1}
-            className="h-12 text-base"
-          />
-          <FieldDescription>Answered on the last screen</FieldDescription>
-        </Field>
-
-        <Field name="host">
-          <FieldLabel>
-            Who are you here to see?
-            <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
-              Optional
-            </span>
-          </FieldLabel>
-          <Combobox items={HOSTS} value={host} onValueChange={setHost}>
-            <ComboboxInput
-              placeholder="Start typing a name"
-              className="h-12 text-base"
-            />
-            <ComboboxContent>
-              <ComboboxEmpty>Nobody by that name.</ComboboxEmpty>
-              <ComboboxList>
-                {(name: string) => (
-                  <ComboboxItem key={name} value={name}>
-                    {name}
-                  </ComboboxItem>
-                )}
-              </ComboboxList>
-            </ComboboxContent>
-          </Combobox>
-        </Field>
-
-        <Field name="reason" className="col-span-2">
-          <FieldLabel>
-            Reason for the visit
-            <span className="ml-1.5 text-[13px] font-normal text-fg-subtle">
-              Optional
-            </span>
-          </FieldLabel>
-          <FieldControl
-            placeholder="Level 4 lighting rough-in"
-            className="h-12 text-base"
-          />
-        </Field>
+        ))}
       </div>
 
       <Separator className="mt-4" />
 
       <div className="mt-4 flex flex-none items-center justify-between gap-6">
         <span className="font-mono text-[13px] text-fg-subtle">
-          Yours, not your firm's · asked once ever
+          Yours, not your firm's · signed up and signed in at once
         </span>
         <div className="flex flex-none items-center gap-3">
           <Button variant="outline" size="cta" type="button" onClick={onBack}>
@@ -630,6 +566,23 @@ export function TradeDetailsScreen({
         </div>
       </div>
     </Form>
+  );
+}
+
+/** A row-spanning heading inside the two-column grid. */
+function GroupLabel({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <span
+      className={`col-span-2 font-mono text-[11px] tracking-[0.14em] text-fg-subtle uppercase ${className}`}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -990,7 +943,10 @@ export function BriefingScreen({
           </p>
         </div>
 
-        <div className={`flex flex-col ${picked ? "gap-3" : "gap-3.5"}`}>
+        {/* One gap in both states: the cards grow smoothly, so a gap
+          * that changes at the moment of the tap would snap against
+          * the animation. */}
+        <div className="flex flex-col gap-3.5">
           {question.options.map((option) => (
             <QuestionOption
               key={option.text}
