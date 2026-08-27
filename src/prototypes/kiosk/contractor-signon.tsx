@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { required } from "@/lib/form";
-import { QuestionOption } from "@/prototypes/briefing-question";
+import { QuestionOption } from "@/prototypes/contractor/briefing-question";
 import {
   askLine,
   optionState,
@@ -42,25 +42,25 @@ import {
   QUESTIONS,
   RESPONSIBILITIES,
   useBriefing,
-} from "@/prototypes/contractor-briefing";
+} from "@/prototypes/contractor/briefing";
 import {
   BLANK,
   COUNTRIES,
   INDUSTRIES,
   REGISTERED,
   type Company,
-} from "@/prototypes/contractor-firms";
-import { StepHeader, StepRail } from "@/prototypes/kiosk-chrome";
-import { Card, Tile } from "@/prototypes/kiosk-landing";
-import { PersonIcon, QrIcon, ToolboxIcon } from "@/prototypes/kiosk-icons";
+} from "@/prototypes/contractor/firms";
+import { StepHeader, StepRail } from "@/prototypes/kiosk/chrome";
+import { Card, Tile } from "@/prototypes/kiosk/landing";
+import { PersonIcon, QrIcon, ToolboxIcon } from "@/prototypes/shared/icons";
 import {
   CompanyReadOnly,
   personComplete,
   personFields,
   PersonFieldRow,
   type Person,
-} from "@/prototypes/contractor-person";
-import { useShakeInvalid } from "@/prototypes/use-shake-invalid";
+} from "@/prototypes/contractor/person";
+import { useShakeInvalid } from "@/hooks/use-shake-invalid";
 
 /**
  * Signing a trade on at the glass, with nothing done beforehand.

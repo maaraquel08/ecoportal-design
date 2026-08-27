@@ -9,7 +9,7 @@ import {
 import { QrMock } from "@/components/qr-mock";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { LobbyMap } from "@/prototypes/lobby-map";
+import { LobbyMap } from "@/prototypes/shared/lobby-map";
 import {
   CONTRACTOR_PASS_CAPTION,
   CONTRACTOR_PERMIT_ROW,
@@ -17,7 +17,7 @@ import {
   VISITOR_PASS_CAPTION,
   VISITOR_PASS_ROWS,
   type PassRow,
-} from "@/prototypes/visitor-pass";
+} from "@/prototypes/shared/pass-card";
 
 /**
  * The success state, from studies 4a / 4b / 4c: three pages instead of

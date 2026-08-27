@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cssMs } from "@/lib/motion";
-import { QrIcon } from "@/prototypes/kiosk-icons";
+import { QrIcon } from "@/prototypes/shared/icons";
 
 /** How long the reader waits before reading the code by itself. */
 const SCAN_AUTO_DELAY = 2000;

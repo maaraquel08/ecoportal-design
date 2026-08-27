@@ -2,16 +2,16 @@ import * as React from "react";
 import { ControlDeck } from "@/components/control-deck";
 import { useLane, type Lane } from "@/hooks/use-lane";
 import { MY_NOTICES } from "@/components/notice";
-import { ContractorPrearrival } from "@/prototypes/contractor-prearrival";
-import { REGISTERED } from "@/prototypes/contractor-firms";
-import { KioskContractor } from "@/prototypes/kiosk-contractor";
-import { KioskPhone } from "@/prototypes/kiosk-phone";
-import { contractorDuring, VisitDuring } from "@/prototypes/visit-during";
-import { contractorLeaving, VisitLeaving } from "@/prototypes/visit-leaving";
+import { ContractorPrearrival } from "@/prototypes/contractor/prearrival";
+import { REGISTERED } from "@/prototypes/contractor/firms";
+import { KioskContractor } from "@/prototypes/kiosk/contractor";
+import { KioskPhone } from "@/prototypes/kiosk/phone";
+import { contractorDuring, VisitDuring } from "@/prototypes/visit/during";
+import { contractorLeaving, VisitLeaving } from "@/prototypes/visit/leaving";
 import {
   CONTRACTOR_PASS_CAPTION,
   contractorPassRows,
-} from "@/prototypes/visitor-pass";
+} from "@/prototypes/shared/pass-card";
 
 type Scenario =
   | "first-time"

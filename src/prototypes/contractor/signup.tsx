@@ -33,7 +33,7 @@ import {
   Mono,
   StepBar,
   StepHeading,
-} from "@/prototypes/contractor-chrome";
+} from "@/prototypes/contractor/chrome";
 import {
   BLANK,
   COUNTRIES,
@@ -41,15 +41,15 @@ import {
   MANUAL,
   REGISTERED,
   type Company,
-} from "@/prototypes/contractor-firms";
+} from "@/prototypes/contractor/firms";
 import {
   CompanyReadOnly,
   personComplete,
   personFields,
   PersonFieldRow,
   type Person,
-} from "@/prototypes/contractor-person";
-import { useShakeInvalid } from "@/prototypes/use-shake-invalid";
+} from "@/prototypes/contractor/person";
+import { useShakeInvalid } from "@/hooks/use-shake-invalid";
 
 /* -- the screens ---------------------------------------------------- */
 

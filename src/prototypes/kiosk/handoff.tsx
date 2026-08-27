@@ -8,14 +8,14 @@ import {
   ExitIcon,
   PersonIcon,
   ToolboxIcon,
-} from "@/prototypes/kiosk-icons";
+} from "@/prototypes/shared/icons";
 import {
   DetailsScreen,
   Footnote,
   NoticesScreen,
   PassScreen,
-} from "@/prototypes/visitor-steps";
-import { VisitorPassCard } from "@/prototypes/visitor-pass";
+} from "@/prototypes/visitor/steps";
+import { VisitorPassCard } from "@/prototypes/shared/pass-card";
 
 /* -- the routes ----------------------------------------------------- */
 

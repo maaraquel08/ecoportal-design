@@ -6,7 +6,7 @@ import { PhoneFrame, PhoneScreen } from "@/components/phone-frame";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { sentenceCase } from "@/lib/text";
-import { QuestionOption } from "@/prototypes/briefing-question";
+import { QuestionOption } from "@/prototypes/contractor/briefing-question";
 import {
   askLine,
   optionState,
@@ -14,33 +14,33 @@ import {
   QUESTIONS,
   RESPONSIBILITIES,
   useBriefing,
-} from "@/prototypes/contractor-briefing";
+} from "@/prototypes/contractor/briefing";
 import {
   Footnote,
   Mono,
   StepBar,
   StepCount,
   StepHeader,
-} from "@/prototypes/contractor-chrome";
+} from "@/prototypes/contractor/chrome";
 import {
   BLANK,
   REGISTERED,
   type Company,
-} from "@/prototypes/contractor-firms";
+} from "@/prototypes/contractor/firms";
 import {
   BLANK_PERSON,
   type Person,
-} from "@/prototypes/contractor-person";
+} from "@/prototypes/contractor/person";
 import {
   CompanyScreen,
   PersonScreen,
   SignedUpScreen,
-} from "@/prototypes/contractor-signup";
+} from "@/prototypes/contractor/signup";
 import {
   CONTRACTOR_PASS_CAPTION,
   contractorPassRows,
   VisitorPassCard,
-} from "@/prototypes/visitor-pass";
+} from "@/prototypes/shared/pass-card";
 
 /* -- the tape ------------------------------------------------------- */
 

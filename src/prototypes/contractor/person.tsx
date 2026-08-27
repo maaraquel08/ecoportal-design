@@ -14,7 +14,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { EMAIL_RE, required } from "@/lib/form";
-import { HOSTS } from "@/prototypes/hosts";
+import { HOSTS } from "@/prototypes/shared/hosts";
 
 /**
  * The one description of a contractor's own fields.

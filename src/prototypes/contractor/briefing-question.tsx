@@ -1,7 +1,7 @@
 import {
   type BriefingOption,
   type OptionState,
-} from "@/prototypes/contractor-briefing";
+} from "@/prototypes/contractor/briefing";
 
 /**
  * One answer to a briefing question, on either surface.

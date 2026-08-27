@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Tooltip } from "@/components/ui/tooltip";
-import { useDockAnchor } from "@/components/use-dock-anchor";
+import { useDockAnchor } from "@/hooks/use-dock-anchor";
 
 function GripIcon() {
   return (
