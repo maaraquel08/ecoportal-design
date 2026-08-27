@@ -22,7 +22,8 @@ import {
 import { Form } from "@/components/ui/form";
 import { HOSTS } from "@/prototypes/hosts";
 import { StepHeader } from "@/prototypes/kiosk-chrome";
-import { CheckedInScreen, PhotoScreen } from "@/prototypes/kiosk-steps";
+import { KioskOnSite, visitorOnSite } from "@/prototypes/kiosk-onsite";
+import { PhotoScreen } from "@/prototypes/kiosk-steps";
 import { useShakeInvalid } from "@/prototypes/use-shake-invalid";
 
 /* -- the tape ------------------------------------------------------- */
@@ -73,7 +74,7 @@ function DetailsScreen({
       <StepHeader
         label="Your details"
         active={1}
-        total={3}
+        total={2}
         onBack={onBack}
       />
 
@@ -224,7 +225,7 @@ function NoticesScreen({
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col px-10 pt-4 pb-6">
-      <StepHeader label="Today" active={2} total={3} onBack={onBack} />
+      <StepHeader label="Today" active={2} total={2} onBack={onBack} />
 
       <h2 className="mt-3 text-[34px] leading-[1.08] font-bold tracking-[-0.03em]">
         Two things to know about today
@@ -319,15 +320,15 @@ export function KioskVisiting({
     2: (
       <PhotoScreen
         active={step === 2}
-        step="3 of 3"
+        step={null}
         onBack={() => goTo(1)}
         onDone={() => goTo(3)}
       />
     ),
     3: (
-      <CheckedInScreen
+      <KioskOnSite
         active={step === 3}
-        firstName={firstName}
+        content={visitorOnSite({ firstName })}
         onDone={onExit}
       />
     ),

@@ -28,7 +28,10 @@ import {
   FindByNameScreen,
 } from "@/prototypes/kiosk-find-by-name";
 import { KioskLanding } from "@/prototypes/kiosk-landing";
-import { ContractorOnSite } from "@/prototypes/kiosk-contractor-onsite";
+import {
+  contractorOnSite,
+  KioskOnSite,
+} from "@/prototypes/kiosk-onsite";
 import { PhotoScreen } from "@/prototypes/kiosk-steps";
 import { ScanPanel, useAutoScan } from "@/prototypes/scan-panel";
 
@@ -436,10 +439,12 @@ export function KioskContractor({
        * inside one step, because it is one arrival. */
       case "on-site":
         return (
-          <ContractorOnSite
+          <KioskOnSite
             active={step === index}
-            firstName={firstName}
-            company={company.name || TRADE.company}
+            content={contractorOnSite({
+              firstName,
+              company: company.name || TRADE.company,
+            })}
             onDone={reset}
           />
         );

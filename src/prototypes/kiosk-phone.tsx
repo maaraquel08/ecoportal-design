@@ -4,7 +4,6 @@ import { NoticeList, type Notice } from "@/components/notice";
 import { PhoneFrame, PhoneScreen } from "@/components/phone-frame";
 import { Button } from "@/components/ui/button";
 import { LobbyMap } from "@/prototypes/lobby-map";
-import { type KioskRoute } from "@/prototypes/kiosk-steps";
 import { VisitorPassCard, type PassRow } from "@/prototypes/visitor-pass";
 
 /* -- study K2·M · the same screen on her phone ----------------------- */
@@ -22,6 +21,9 @@ import { VisitorPassCard, type PassRow } from "@/prototypes/visitor-pass";
  * screen, same order, its own facts — so the defaults below are the
  * visitor's and the contractor passes its own.
  */
+
+/** Where the lifts are, on a phone: "East lifts → L9". */
+export type KioskRoute = { zone: string; target: string; caption: string };
 
 /** Abbreviated for a phone: "East lifts → L9", not the tablet's arrow. */
 const VISITOR_ROUTE: KioskRoute = {

@@ -1,16 +1,14 @@
 import * as React from "react";
-import { NoticeList, type Notice } from "@/components/notice";
 import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cssMs } from "@/lib/motion";
-import { LobbyMap } from "@/prototypes/lobby-map";
-import { VisitorPassCard, type PassRow } from "@/prototypes/visitor-pass";
 
 /**
- * Kiosk steps shared by both paths through the tablet: whoever gets
- * here — scanned a code, found their booking, or filled the form —
- * takes the same photo and lands on the same pass.
+ * The photo, shared by every path through the tablet: whoever gets
+ * here — scanned a pass, found their booking, or filled the form —
+ * looks up at the same camera. Where they land afterwards is their
+ * lane's business, in kiosk-onsite.
  */
 
 /* -- T2 · the photo (step 2 of 3) ----------------------------------- */
@@ -193,120 +191,6 @@ export function PhotoScreen({
           </Button>
           <Button size="cta" disabled={!captured} onClick={onDone}>
             Continue
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* -- T3 · checked in · study K2 ------------------------------------- */
-
-/** How long the pass stays up before the kiosk resets for the next person. */
-const RESET_SECONDS = 28;
-
-/** Where the lifts are, and what to say about getting there. */
-export type KioskRoute = { zone: string; target: string; caption: string };
-
-const VISITOR_ROUTE: KioskRoute = {
-  zone: "Lobby · ground floor",
-  target: "East lifts → Level 9",
-  caption: "Straight past the café, then right to the east lifts",
-};
-
-/**
- * K2, for whoever just checked in. The layout is fixed — status, one
- * sentence, then the map and the pass — and every lane fills it with
- * its own facts rather than drawing its own version of it.
- */
-export function CheckedInScreen({
-  active,
-  firstName = "Marta",
-  status = "Checked in · 04:24PM",
-  headline,
-  route = VISITOR_ROUTE,
-  notices,
-  passCaption,
-  passRows,
-  passNote = "Scan the code to carry it on your phone.",
-  onDone,
-}: {
-  active: boolean;
-  firstName?: string;
-  status?: string;
-  headline?: string;
-  route?: KioskRoute;
-  notices?: Notice[];
-  passCaption?: string;
-  passRows?: PassRow[];
-  passNote?: string;
-  onDone: () => void;
-}) {
-  const [remaining, setRemaining] = React.useState(RESET_SECONDS);
-
-  React.useEffect(() => {
-    if (!active) {
-      setRemaining(RESET_SECONDS);
-      return;
-    }
-    if (remaining === 0) {
-      onDone();
-      return;
-    }
-    const timer = window.setTimeout(() => setRemaining((n) => n - 1), 1000);
-    return () => window.clearTimeout(timer);
-  }, [active, remaining, onDone]);
-
-  return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-10 pt-4 pb-6">
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-[13px] tracking-[0.14em] text-lane-fill uppercase">
-          {status}
-        </span>
-        <span className="text-[15px] text-fg-subtle">
-          Returning to the start in{" "}
-          <span className="font-mono font-medium text-fg-muted">
-            {remaining}s
-          </span>
-        </span>
-      </div>
-
-      <h2 className="mt-2 text-[34px] leading-[1.08] font-bold tracking-[-0.03em]">
-        {headline ??
-          `You're in, ${firstName}. Head up to Level 9 whenever you're ready.`}
-      </h2>
-
-      {/* One 12px gap grid: the map and the code take the slack, so the
-        * two columns end level whatever the glass height is. */}
-      <div className="mt-4 flex min-h-0 flex-1 gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <div className="flex min-h-0 flex-1 flex-col rounded-[18px] border border-line p-3.5">
-            <div className="flex items-baseline justify-between px-0.5 pb-2.5">
-              <span className="font-mono text-xs tracking-[0.12em] text-fg-subtle uppercase">
-                {route.zone}
-              </span>
-              <span className="text-[15px] font-semibold whitespace-nowrap text-lane-fill">
-                {route.target}
-              </span>
-            </div>
-            <LobbyMap fill />
-            <p className="px-0.5 pt-2.5 text-[15px] text-fg-muted">
-              {route.caption}
-            </p>
-          </div>
-
-          <NoticeList notices={notices} />
-        </div>
-
-        <div className="flex w-100 flex-none flex-col gap-3">
-          {/* The same pass object the phone and the pre-arrival flow
-            * show — one component, so the three can never disagree. */}
-          <VisitorPassCard fill caption={passCaption} rows={passRows} />
-
-          <p className="text-[15px] leading-normal text-fg-subtle">{passNote}</p>
-          {/* Lets the next person start without waiting out the timer. */}
-          <Button size="cta" className="w-full" onClick={onDone}>
-            Done
           </Button>
         </div>
       </div>

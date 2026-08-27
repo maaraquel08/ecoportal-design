@@ -1,6 +1,11 @@
 import * as React from "react";
 import { BackButton } from "@/components/back-button";
-import { NoticeList, WORK_NOTICES } from "@/components/notice";
+import {
+  NoticeList,
+  TODAY_NOTICES,
+  WORK_NOTICES,
+  type Notice,
+} from "@/components/notice";
 import { QrMock } from "@/components/qr-mock";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -9,21 +14,28 @@ import {
   CONTRACTOR_PASS_CAPTION,
   CONTRACTOR_PERMIT_ROW,
   contractorPassRows,
+  VISITOR_PASS_CAPTION,
+  VISITOR_PASS_ROWS,
+  type PassRow,
 } from "@/prototypes/visitor-pass";
 
 /**
- * On site, from studies 4a / 4b / 4c: three pages instead of one
- * crowded screen.
+ * The success state, from studies 4a / 4b / 4c: three pages instead of
+ * one crowded screen.
  *
  * Check-in has already succeeded. What is left is what she walks
  * through on the way off the kiosk, and the order is the order the
  * facts matter on the way in — the notices first, because they are the
  * only thing that is news; then where the room is; then the pass she
- * will hold at the reader tonight.
+ * will hold at the reader on the way out.
  *
  * Each page carries one idea at full size. Back exists from page 2
  * onward and Done only on page 3, so forward is the same tap as
  * reading on and there is no skip link to reward not reading.
+ *
+ * Both lanes end here. A visitor is sent to the east lifts with two
+ * notices; a trade is sent to the service lift with six and a permit
+ * on her pass. Same three pages, same order, its own facts.
  */
 
 const PAGES = 3;
@@ -33,11 +45,95 @@ const PAGES = 3;
  *  her check-in stands either way. */
 const RESET_SECONDS = 45;
 
-const TOTAL = WORK_NOTICES.length;
-const MINE = WORK_NOTICES.filter((notice) => notice.scope).length;
-
 /** The study writes the count as a word. */
 const WORDS = ["No", "One", "Two", "Three", "Four", "Five", "Six"];
+const countWord = (n: number) => WORDS[n] ?? String(n);
+
+export type OnSiteContent = {
+  /** The status rail: what happened, when, and to whom. */
+  status: string;
+  notices: Notice[];
+  /** Left of the footer on page 1, where Back is not offered. */
+  noticesHint: string;
+  where: {
+    title: string;
+    aside: string;
+    /** The tinted column on the plan, and the floor bubble if it earns
+     *  one. */
+    destination: { label: string; note?: string };
+    pin: string | null;
+    directions: string;
+    /** The one notice worth repeating next to the route. */
+    remember?: { label: string; body: string };
+  };
+  pass: {
+    caption: string;
+    rows: PassRow[];
+    note: string;
+  };
+};
+
+/* -- what each lane says --------------------------------------------- */
+
+export const visitorOnSite = ({
+  firstName = "Marta",
+  lastName = "Nowak",
+}: {
+  firstName?: string;
+  lastName?: string;
+}): OnSiteContent => ({
+  status: `Checked in · 04:24pm · ${firstName} ${lastName}`,
+  notices: TODAY_NOTICES,
+  noticesHint: "Nothing to tick — just so you are not surprised",
+  where: {
+    title: "Level 9 · Kestrel Legal",
+    aside: "East lifts → Level 9",
+    destination: { label: "East lifts", note: "All levels" },
+    pin: "9",
+    directions:
+      "Straight past the café, then right to the east lifts. Out on 9, reception is opposite the lift lobby.",
+  },
+  pass: {
+    caption: VISITOR_PASS_CAPTION,
+    rows: VISITOR_PASS_ROWS,
+    note: "Scan the code to carry it on your phone.",
+  },
+});
+
+export const contractorOnSite = ({
+  firstName,
+  lastName = "Raman",
+  company,
+}: {
+  firstName: string;
+  lastName?: string;
+  company: string;
+}): OnSiteContent => ({
+  status: `On site · 08:04am · ${firstName} ${lastName}`,
+  notices: WORK_NOTICES,
+  noticesHint: "Scroll for the last two",
+  where: {
+    title: "Level 4 · riser cupboard, east end",
+    aside: "Service lift → Level 4",
+    /* Tools go in the service lift, and the plan says so rather than
+     * pointing her at the lifts everyone else uses. */
+    destination: { label: "Service lift" },
+    pin: null,
+    directions:
+      "Past the café to the service corridor, lift on the right. Out on 4, turn left — the riser cupboard is at the east end, opposite the lift lobby.",
+    remember: {
+      label: "Remember",
+      body: "Passenger lift on 4 is out until 5pm.",
+    },
+  },
+  pass: {
+    caption: CONTRACTOR_PASS_CAPTION,
+    /* The permit only exists once she is on site, so it is added here
+     * rather than carried by the pass her phone already holds. */
+    rows: [...contractorPassRows(company), CONTRACTOR_PERMIT_ROW],
+    note: "Also on your phone from this morning — same code.",
+  },
+});
 
 /* -- the chrome the three pages share -------------------------------- */
 
@@ -67,7 +163,7 @@ function PageBars({ page }: { page: number }) {
  */
 function OnSitePage({
   page,
-  firstName,
+  status,
   title,
   aside,
   children,
@@ -78,7 +174,7 @@ function OnSitePage({
   onNext,
 }: {
   page: number;
-  firstName: string;
+  status: string;
   title: string;
   aside?: React.ReactNode;
   children: React.ReactNode;
@@ -92,9 +188,9 @@ function OnSitePage({
   return (
     <div className="flex min-h-0 flex-1 flex-col px-8.5 pt-3.5 pb-6.5">
       <div className="flex flex-none items-center justify-between gap-5">
-        {/* Green because it is a status, not a lane: she is on site. */}
+        {/* Green because it is a status, not a lane: she is in. */}
         <span className="font-mono text-[13px] tracking-[0.14em] text-success uppercase">
-          On site · 08:04am · {firstName} Raman
+          {status}
         </span>
         <PageBars page={page} />
       </div>
@@ -135,29 +231,38 @@ function OnSitePage({
 /* -- 4a · page 1 · what the notices are ----------------------------- */
 
 function NoticesPage({
-  firstName,
+  content,
   onNext,
 }: {
-  firstName: string;
+  content: OnSiteContent;
   onNext: () => void;
 }) {
+  const { notices } = content;
+  /** How many of them are about her own floor or her own work. */
+  const mine = notices.filter((notice) => notice.scope).length;
+
   return (
     <OnSitePage
       page={1}
-      firstName={firstName}
-      title={`${WORDS[TOTAL] ?? TOTAL} notices for today`}
+      status={content.status}
+      title={`${countWord(notices.length)} notice${
+        notices.length === 1 ? "" : "s"
+      } for today`}
       aside={
-        <span className="text-base text-fg-subtle">
-          {MINE} affect Level 4
-        </span>
+        mine > 0 ? (
+          <span className="text-base text-fg-subtle">
+            {mine} affect {content.where.title.split(" ·")[0]}
+          </span>
+        ) : null
       }
+      hint={content.noticesHint}
       next="Next · where you're going"
       onNext={onNext}
     >
-      {/* The only screen of the three that scrolls: six notices is six
+      {/* The only page of the three that can scroll: six notices is six
         * notices, and the ones that touch her floor are at the top. */}
       <NoticeList
-        notices={WORK_NOTICES}
+        notices={notices}
         scale="tablet"
         className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       />
@@ -168,22 +273,24 @@ function NoticesPage({
 /* -- 4b · page 2 · where the room is -------------------------------- */
 
 function WayPage({
-  firstName,
+  content,
   onBack,
   onNext,
 }: {
-  firstName: string;
+  content: OnSiteContent;
   onBack: () => void;
   onNext: () => void;
 }) {
+  const { where } = content;
+
   return (
     <OnSitePage
       page={2}
-      firstName={firstName}
-      title="Level 4 · riser cupboard, east end"
+      status={content.status}
+      title={where.title}
       aside={
         <span className="text-base font-semibold text-success">
-          Service lift → Level 4
+          {where.aside}
         </span>
       }
       back="Notices"
@@ -191,24 +298,23 @@ function WayPage({
       next="Next · your pass"
       onNext={onNext}
     >
-      {/* The same lobby plan the visitor lane draws, pointed at the
-        * service lift instead of the passenger lifts. */}
-      <LobbyMap fill destination={{ label: "Service lift" }} pin={null} />
+      {/* One lobby plan, pointed wherever this lane is going. */}
+      <LobbyMap fill destination={where.destination} pin={where.pin} />
 
       <div className="mt-4 flex flex-none items-start gap-6.5">
         <p className="min-w-0 flex-1 text-[19px] leading-[1.45] text-fg-muted">
-          Past the café to the service corridor, lift on the right. Out on 4,
-          turn left — the riser cupboard is at the east end, opposite the lift
-          lobby.
+          {where.directions}
         </p>
-        <div className="w-62.5 flex-none rounded-[14px] bg-notice-tint px-4 py-3.5">
-          <span className="font-mono text-xs tracking-[0.12em] text-notice uppercase">
-            Remember
-          </span>
-          <p className="mt-1.25 text-[16.5px] leading-[1.35] font-medium text-notice-ink">
-            Passenger lift on 4 is out until 5pm.
-          </p>
-        </div>
+        {where.remember ? (
+          <div className="w-62.5 flex-none rounded-[14px] bg-notice-tint px-4 py-3.5">
+            <span className="font-mono text-xs tracking-[0.12em] text-notice uppercase">
+              {where.remember.label}
+            </span>
+            <p className="mt-1.25 text-[16.5px] leading-[1.35] font-medium text-notice-ink">
+              {where.remember.body}
+            </p>
+          </div>
+        ) : null}
       </div>
     </OnSitePage>
   );
@@ -217,22 +323,20 @@ function WayPage({
 /* -- 4c · page 3 · her pass for today ------------------------------- */
 
 function PassPage({
-  firstName,
-  company,
+  content,
   onBack,
   onDone,
 }: {
-  firstName: string;
-  company: string;
+  content: OnSiteContent;
   onBack: () => void;
   onDone: () => void;
 }) {
-  const rows = [...contractorPassRows(company), CONTRACTOR_PERMIT_ROW];
+  const { pass } = content;
 
   return (
     <OnSitePage
       page={3}
-      firstName={firstName}
+      status={content.status}
       title="Your pass for today"
       back="Where you're going"
       onBack={onBack}
@@ -245,19 +349,19 @@ function PassPage({
           {/* The reference over its expiry, two lines, as the study
             * sets it — the same caption the phone prints on one. */}
           <span className="text-center font-mono text-sm leading-normal text-fg-muted">
-            {CONTRACTOR_PASS_CAPTION.split(" · ").map((line) => (
+            {pass.caption.split(" · ").map((line) => (
               <span key={line} className="block">
                 {line}
               </span>
             ))}
           </span>
           <p className="text-center text-[15px] leading-normal text-fg-subtle">
-            Also on your phone from this morning — same code.
+            {pass.note}
           </p>
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col rounded-[20px] border border-line px-5.5 py-5">
-          {rows.map((row, index) => (
+          {pass.rows.map((row, index) => (
             <React.Fragment key={row.label}>
               {index > 0 ? <Separator /> : null}
               <div className="flex items-baseline justify-between gap-4 py-2.25">
@@ -277,7 +381,8 @@ function PassPage({
             </React.Fragment>
           ))}
 
-          {/* The one rule that outlives the visit. */}
+          {/* The one rule that outlives the visit, and the one line
+            * that is the same in every lane. */}
           <div className="mt-auto rounded-[14px] bg-surface px-4 py-3.5">
             <span className="font-mono text-xs tracking-[0.12em] text-fg-subtle uppercase">
               Leaving
@@ -295,15 +400,13 @@ function PassPage({
 
 /* -- the three, in order -------------------------------------------- */
 
-export function ContractorOnSite({
+export function KioskOnSite({
   active,
-  firstName,
-  company,
+  content,
   onDone,
 }: {
   active: boolean;
-  firstName: string;
-  company: string;
+  content: OnSiteContent;
   onDone: () => void;
 }) {
   const [page, setPage] = React.useState(1);
@@ -320,13 +423,13 @@ export function ContractorOnSite({
   }, [active, page, onDone]);
 
   if (page === 1) {
-    return <NoticesPage firstName={firstName} onNext={() => setPage(2)} />;
+    return <NoticesPage content={content} onNext={() => setPage(2)} />;
   }
 
   if (page === 2) {
     return (
       <WayPage
-        firstName={firstName}
+        content={content}
         onBack={() => setPage(1)}
         onNext={() => setPage(3)}
       />
@@ -335,8 +438,7 @@ export function ContractorOnSite({
 
   return (
     <PassPage
-      firstName={firstName}
-      company={company}
+      content={content}
       onBack={() => setPage(2)}
       onDone={onDone}
     />
