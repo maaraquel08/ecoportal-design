@@ -4,6 +4,11 @@ import * as React from "react";
  * A phone on the desk: 402 × 874 device, notch, status bar and home
  * indicator. The bezel is hardware, so it stays a fixed near-black
  * rather than a brand token; everything inside the glass is themed.
+ *
+ * The glass takes `bg`, the same canvas the page outside the device
+ * uses — it is the app's ground, not a card lifted off it. Only in
+ * dark mode does that read as a change, and there it is the whole
+ * point: the screen stops glowing two steps brighter than the desk.
  */
 export function PhoneFrame({ children }: { children: React.ReactNode }) {
   return (
@@ -11,7 +16,7 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
       {/* Fixed 402 × 874. Never derived from content, so a long screen
         * scrolls inside the glass instead of stretching the device. */}
       <div className="relative h-218.5 rounded-[58px] bg-[#0c0f0e] p-3 ring-2 ring-[#2c3230]">
-        <div className="relative flex size-full flex-col overflow-hidden rounded-[46px] bg-surface-raised">
+        <div className="relative flex size-full flex-col overflow-hidden rounded-[46px] bg-bg">
           <div className="absolute top-[9px] left-1/2 z-30 h-[30px] w-28 -translate-x-1/2 rounded-full bg-[#0c0f0e]" />
 
           <div className="relative z-20 flex h-13 flex-none items-end justify-between px-7 pb-1 text-sm font-semibold">
@@ -64,7 +69,7 @@ export function PhoneScreen({
         {children}
       </div>
       {footer ? (
-        <div className="flex flex-none flex-col gap-2.5 border-t border-line bg-surface-raised px-6 pt-3 pb-3.5">
+        <div className="flex flex-none flex-col gap-2.5 border-t border-line bg-bg px-6 pt-3 pb-3.5">
           {footer}
         </div>
       ) : null}

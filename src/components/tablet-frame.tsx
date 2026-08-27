@@ -29,7 +29,7 @@ export function TabletFrame({
           * near-black rather than a brand token. The glass inside
           * stays exactly 1064 × 768. */}
         <div className="rounded-[40px] bg-[#0c0f0e] p-5 ring-2 ring-[#2c3230]">
-          <div className="flex h-192 w-266 flex-none flex-col overflow-hidden rounded-[22px] bg-surface-raised">
+          <div className="flex h-192 w-266 flex-none flex-col overflow-hidden rounded-[22px] bg-bg">
             <div className="flex flex-none items-center justify-between px-7.5 pt-4.5 text-sm text-fg-subtle">
               <span>{time}</span>
               <span className="text-[13px] font-semibold tracking-[0.06em] text-fg-muted">
