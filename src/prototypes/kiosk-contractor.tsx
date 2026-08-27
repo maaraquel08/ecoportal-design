@@ -3,6 +3,7 @@ import { BackButton } from "@/components/back-button";
 import { ControlDeck } from "@/components/control-deck";
 import { type Notice } from "@/components/notice";
 import { TabletFrame } from "@/components/tablet-frame";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useLane } from "@/hooks/use-lane";
 import { sentenceCase } from "@/lib/text";
@@ -22,6 +23,11 @@ import {
   TradeDetailsScreen,
   WhoScreen,
 } from "@/prototypes/kiosk-contractor-signon";
+import { BOOKINGS, type Booking } from "@/prototypes/bookings";
+import {
+  CodeScreen,
+  FindByNameScreen,
+} from "@/prototypes/kiosk-find-by-name";
 import { KioskLanding } from "@/prototypes/kiosk-landing";
 import { CheckedInScreen, PhotoScreen } from "@/prototypes/kiosk-steps";
 import { ScanPanel, useAutoScan } from "@/prototypes/scan-panel";
@@ -56,6 +62,8 @@ type ScreenId =
   | "landing"
   | "who"
   | "reader"
+  | "find"
+  | "code"
   | "company"
   | "details"
   | "briefing"
@@ -76,7 +84,17 @@ const ON_SITE: TapeStep = { id: "on-site", label: "on site" };
 
 const ROUTE_TAPE: Record<Route, readonly TapeStep[]> = {
   unchosen: [WHO],
-  returning: [WHO, { id: "reader", label: "the reader" }, PHOTO, ON_SITE],
+  /* Find-by-name is not a step after the reader, it is the way round
+   * it: scanning jumps the two, exactly as the visitor's scan path
+   * jumps them. Both ways converge on the photo. */
+  returning: [
+    WHO,
+    { id: "reader", label: "the reader" },
+    { id: "find", label: "finding your job" },
+    { id: "code", label: "the code" },
+    PHOTO,
+    ON_SITE,
+  ],
   "first-time": [
     WHO,
     { id: "company", label: "your company" },
@@ -135,12 +153,14 @@ function ReaderScreen({
   active,
   onBack,
   onScanned,
+  onFindByName,
 }: {
   active: boolean;
   /** Back goes to whichever landing we came in through — ours, or the
    *  tab that opened us. */
   onBack: () => void;
   onScanned: () => void;
+  onFindByName: () => void;
 }) {
   const { capturing, readNow } = useAutoScan(active, onScanned);
 
@@ -197,13 +217,15 @@ function ReaderScreen({
 
       <Separator />
 
+      {/* The same escape the visitor's scanner offers, in the same
+        * place: a lost pass is the common case, not an error. */}
       <div className="mt-5 flex items-center justify-between gap-6">
         <span className="font-mono text-[13px] text-fg-subtle">
           Hold steady for about a second
         </span>
-        <span className="text-[15px] text-fg-subtle">
-          No pass? The desk can look you up by name.
-        </span>
+        <Button variant="outline" size="cta" onClick={onFindByName}>
+          Find me by name
+        </Button>
       </div>
     </div>
   );
@@ -223,6 +245,8 @@ export function KioskContractor({
   const [route, setRoute] = React.useState<Route>("unchosen");
   /** The firm she picks, or types. Empty until the company step. */
   const [company, setCompany] = React.useState<Company>(BLANK);
+  /** Which expected job the find-by-name path is verifying. */
+  const [booking, setBooking] = React.useState<Booking>(BOOKINGS[0]);
   /** Her own fields, in the shape the phone's sign-up uses too, so
    *  the two doors are filling in one record. */
   const [person, setPerson] = React.useState<Person>(BLANK_PERSON);
@@ -233,6 +257,9 @@ export function KioskContractor({
   const tapeFor = (next: Route) =>
     onExit ? ROUTE_TAPE[next] : [LANDING, ...ROUTE_TAPE[next]];
   const tape = tapeFor(route);
+  /** Screens address each other by name: the same screen sits at a
+   *  different number on each tape. */
+  const indexOf = (id: ScreenId) => tape.findIndex((entry) => entry.id === id);
 
   const [step, setStep] = React.useState(0);
 
@@ -373,7 +400,33 @@ export function KioskContractor({
           <ReaderScreen
             active={step === index}
             onBack={backFrom(index)}
-            onScanned={() => goTo(index + 1)}
+            /* A pass that reads skips the two screens that exist to
+             * do without one. */
+            onScanned={() => goTo(indexOf("photo"))}
+            onFindByName={() => goTo(index + 1)}
+          />
+        );
+      /* X1 · the masked list, and X2/X3 · the code to her own inbox.
+       * The visitor lane's screens, unchanged apart from the noun. */
+      case "find":
+        return (
+          <FindByNameScreen
+            entity={{ one: "job", many: "jobs" }}
+            onBack={backFrom(index)}
+            onPick={(picked) => {
+              setBooking(picked);
+              goTo(index + 1);
+            }}
+          />
+        );
+      case "code":
+        return (
+          <CodeScreen
+            active={step === index}
+            booking={booking}
+            onBack={backFrom(index)}
+            onVerified={() => goTo(index + 1)}
+            onGiveUp={reset}
           />
         );
       case "photo":
@@ -383,7 +436,14 @@ export function KioskContractor({
             step={
               route === "first-time" ? `${SIGN_ON_TOTAL} of ${SIGN_ON_TOTAL}` : "2 of 3"
             }
-            onBack={backFrom(index)}
+            /* Back from the photo is the reader, whichever way she
+             * got past it — the code screen is not somewhere to
+             * return to once it has let her through. */
+            onBack={
+              route === "returning"
+                ? () => goTo(indexOf("reader"))
+                : backFrom(index)
+            }
             onDone={() => goTo(index + 1)}
           />
         );

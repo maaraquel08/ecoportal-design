@@ -61,9 +61,13 @@ function SkeletonRow() {
 export function FindByNameScreen({
   onBack,
   onPick,
+  /** What the site is expecting today. A visitor looks for her
+   *  booking; a trade looks for her job. Same list, same masking. */
+  entity = { one: "booking", many: "bookings" },
 }: {
   onBack: () => void;
   onPick: (booking: Booking) => void;
+  entity?: { one: string; many: string };
 }) {
   const [query, setQuery] = React.useState("Now");
   const matches = matchBookings(query);
@@ -92,9 +96,11 @@ export function FindByNameScreen({
       <h2 className="mt-3 text-[34px] leading-[1.08] font-bold tracking-[-0.03em]">
         {query.trim()
           ? `${countWord(matches.length)} ${
-              matches.length === 1 ? "booking matches" : "bookings match"
+              matches.length === 1
+                ? `${entity.one} matches`
+                : `${entity.many} match`
             } "${query.trim()}"`
-          : `${countWord(BOOKINGS.length)} bookings today`}
+          : `${countWord(BOOKINGS.length)} ${entity.many} today`}
       </h2>
       <p className="mt-2 max-w-[64ch] text-[17px] text-fg-muted">
         Pick yours. We will check it is you before anything is confirmed — so
@@ -137,14 +143,14 @@ export function FindByNameScreen({
                   /* The first match is pre-highlighted: most people are
                    * looking at their own name at the top of the list. */
                   index === 0
-                    ? "border-[1.5px] border-house-base bg-house-tint/40"
+                    ? "border-[1.5px] border-lane-base bg-lane-tint/40"
                     : "border border-line hover:bg-surface"
                 }`}
               >
                 <span
                   className={`flex size-11.5 flex-none items-center justify-center rounded-xl text-base font-semibold ${
                     index === 0
-                      ? "bg-house-tint text-house-fill"
+                      ? "bg-lane-tint text-lane-fill"
                       : "bg-surface text-fg-muted"
                   }`}
                 >
@@ -160,7 +166,7 @@ export function FindByNameScreen({
                 </span>
                 <span
                   className={`flex-none font-mono text-[13px] ${
-                    index === 0 ? "text-house-fill" : "text-fg-subtle"
+                    index === 0 ? "text-lane-fill" : "text-fg-subtle"
                   }`}
                 >
                   This is me
@@ -170,7 +176,7 @@ export function FindByNameScreen({
 
             {matches.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-line px-5 py-8 text-center text-[17px] text-fg-subtle">
-                No booking starts with “{query.trim()}”.
+                No {entity.one} starts with “{query.trim()}”.
               </div>
             ) : null}
           </div>
@@ -185,7 +191,7 @@ export function FindByNameScreen({
 
       <p className="mt-3 text-[15px] text-fg-subtle">
         Not listed?{" "}
-        <span className="font-semibold text-house-fill">
+        <span className="font-semibold text-lane-fill">
           Reception at the desk
         </span>{" "}
         can add you in a moment.
@@ -389,7 +395,7 @@ export function CodeScreen({
                     failed
                       ? "border-[1.5px] border-danger-line bg-danger-tint text-danger"
                       : selected
-                        ? "border-[1.5px] border-house-base bg-house-tint/40"
+                        ? "border-[1.5px] border-lane-base bg-lane-tint/40"
                         : filled
                           ? "border border-line-strong"
                           : "border border-line text-fg-subtle"
@@ -398,7 +404,7 @@ export function CodeScreen({
                   {filled ? (
                     digit
                   ) : selected ? (
-                    <span className="text-house-base">|</span>
+                    <span className="text-lane-base">|</span>
                   ) : (
                     "—"
                   )}
